@@ -5,6 +5,7 @@ import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { ConfigService } from '../services/config.js';
 import { Config } from '../types/index.js';
+import { InteractionHistory } from '../services/interaction-history.js';
 
 interface AccountSelectorProps {
   onAccountSelected: (account: Config['selectedAccount']) => void;
@@ -54,6 +55,10 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
 
   const handleSelect = async (item: { value: Config['selectedAccount'] }) => {
     try {
+      // Record the selection
+      const accountLabel = item.value.type === 'personal' ? `Personal (${item.value.login})` : `Organization (${item.value.login})`;
+      InteractionHistory.record('selection', 'Account', accountLabel);
+      
       await ConfigService.setSelectedAccount(item.value);
       onAccountSelected(item.value);
     } catch (err) {

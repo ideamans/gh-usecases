@@ -5,6 +5,7 @@ import { GitHubAPI } from '../services/github-api.js';
 import { ConfigService } from '../services/config.js';
 import { Config, Team, Project } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
+import { InteractionHistory } from '../services/interaction-history.js';
 
 interface TeamSelectorProps {
   account: Config['selectedAccount'];
@@ -80,8 +81,10 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
           const newSet = new Set(prev);
           if (newSet.has(team.id)) {
             newSet.delete(team.id);
+            InteractionHistory.record('action', 'Deselected Team', team.name);
           } else {
             newSet.add(team.id);
+            InteractionHistory.record('action', 'Selected Team', team.name);
           }
           return newSet;
         });
@@ -104,6 +107,9 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
     try {
       const selectedTeams = teams.filter(team => selectedTeamIds.has(team.id));
+      
+      // Record the final team selection
+      InteractionHistory.record('selection', 'Final Team Selection', selectedTeams.map(t => t.name).join(', '));
       
       await GitHubAPI.addProjectToTeams(
         project.id,

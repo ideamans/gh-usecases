@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
 import { UseCase } from '../types/index.js';
+import { InteractionHistory } from '../services/interaction-history.js';
 
 interface UseCaseSelectorProps {
   onUseCaseSelected: (useCase: UseCase) => void;
@@ -24,6 +25,8 @@ const useCaseItems = [
 
 export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({ onUseCaseSelected }) => {
   const handleSelect = (item: { value: UseCase }) => {
+    const label = useCaseItems.find(i => i.value === item.value)?.label || item.value;
+    InteractionHistory.record('selection', 'Use Case', label);
     onUseCaseSelected(item.value);
   };
 

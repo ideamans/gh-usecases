@@ -6,6 +6,7 @@ import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { Config, Project } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
+import { InteractionHistory } from '../services/interaction-history.js';
 
 interface ProjectSelectorProps {
   account: Config['selectedAccount'];
@@ -47,6 +48,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
     setSearching(true);
     setError(null);
     
+    // Record search query
+    if (searchQuery.trim()) {
+      InteractionHistory.record('input', 'Project Search', searchQuery.trim());
+    }
+    
     try {
       const results = await GitHubAPI.searchProjects(searchQuery, account.login, 20);
       setProjects(results);
@@ -61,6 +67,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
 
   const handleSearchSubmit = () => {
     if (projects.length === 1) {
+      InteractionHistory.record('selection', 'Project', projects[0].title);
       onProjectSelected(projects[0]);
     } else if (projects.length > 1) {
       setShowResults(true);
@@ -68,6 +75,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   };
 
   const handleProjectSelect = (item: { value: Project }) => {
+    InteractionHistory.record('selection', 'Project', item.value.title);
     onProjectSelected(item.value);
   };
 

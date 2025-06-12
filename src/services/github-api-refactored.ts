@@ -58,13 +58,13 @@ export class GitHubAPI {
         nodes: Array<{
           id: string;
           title: string;
-          shortDescription: string;
+          shortDescription: string | null;
           public: boolean;
         }>;
       };
     }>(`
       query SearchProjects($query: String!, $first: Int!) {
-        search(query: $query, type: REPOSITORY, first: $first) {
+        search(query: $query, type: ISSUE, first: $first) {
           nodes {
             ... on ProjectV2 {
               id
@@ -83,7 +83,7 @@ export class GitHubAPI {
     return search.nodes.map(node => ({
       id: node.id,
       name: node.title,
-      description: node.shortDescription,
+      description: node.shortDescription || '',
       visibility: node.public ? 'PUBLIC' : 'PRIVATE',
     }));
   }
@@ -91,13 +91,12 @@ export class GitHubAPI {
   async createProject(input: CreateProjectInput): Promise<Project> {
     const graphqlClient = await this.getGraphQLClient();
     
+    // First create the project with just title and owner
     const { createProjectV2 } = await graphqlClient.request<{
       createProjectV2: {
         projectV2: {
           id: string;
           title: string;
-          shortDescription: string;
-          public: boolean;
         };
       };
     }>(`
@@ -106,8 +105,6 @@ export class GitHubAPI {
           projectV2 {
             id
             title
-            shortDescription
-            public
           }
         }
       }
@@ -115,16 +112,37 @@ export class GitHubAPI {
       input: {
         ownerId: input.ownerId,
         title: input.title,
-        shortDescription: input.description,
-        public: input.visibility === 'PUBLIC',
       },
     });
 
+    const projectId = createProjectV2.projectV2.id;
+    
+    // Update project with description and visibility
+    if (input.description !== undefined || input.visibility !== undefined) {
+      await graphqlClient.request(`
+        mutation UpdateProject($projectId: ID!, $shortDescription: String, $public: Boolean) {
+          updateProjectV2(input: {
+            projectId: $projectId,
+            shortDescription: $shortDescription,
+            public: $public
+          }) {
+            projectV2 {
+              id
+            }
+          }
+        }
+      `, {
+        projectId,
+        shortDescription: input.description || null,
+        public: input.visibility === 'PUBLIC',
+      });
+    }
+    
     return {
-      id: createProjectV2.projectV2.id,
+      id: projectId,
       name: createProjectV2.projectV2.title,
-      description: createProjectV2.projectV2.shortDescription,
-      visibility: createProjectV2.projectV2.public ? 'PUBLIC' : 'PRIVATE',
+      description: input.description || '',
+      visibility: input.visibility || 'PRIVATE',
     };
   }
 

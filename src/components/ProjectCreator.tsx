@@ -6,6 +6,7 @@ import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { Config, Project } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
+import { InteractionHistory } from '../services/interaction-history.js';
 
 interface ProjectCreatorProps {
   account: Config['selectedAccount'];
@@ -30,15 +31,18 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       setError(new Error('Project name is required'));
       return;
     }
+    InteractionHistory.record('input', 'Project Name', name.trim());
     setError(null);
     setStep('description');
   };
 
   const handleDescriptionSubmit = () => {
+    InteractionHistory.record('input', 'Description', description.trim() || '(empty)');
     setStep('visibility');
   };
 
   const handleVisibilitySelect = async (item: { value: 'PRIVATE' | 'PUBLIC' }) => {
+    InteractionHistory.record('selection', 'Visibility', item.value === 'PRIVATE' ? 'Private' : 'Public');
     setStep('creating');
     await createProject(item.value);
   };
