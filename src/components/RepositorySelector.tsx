@@ -7,6 +7,8 @@ import { GitHubAPI } from '../services/github-api.js';
 import { Config, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
+import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
+import { TokenRefreshHint } from './TokenRefreshHint.js';
 
 interface RepositorySelectorProps {
   account: Config['selectedAccount'];
@@ -71,7 +73,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
 
   const handleSearchSubmit = () => {
     if (repositories.length === 1) {
-      InteractionHistory.record('selection', 'Repository', repositories[0].title);
+      InteractionHistory.record('selection', 'Repository', repositories[0].name);
       onRepositorySelected(repositories[0]);
     } else if (repositories.length > 1) {
       setShowResults(true);

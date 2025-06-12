@@ -6,7 +6,7 @@ TypeScriptとInk（CLI用React）で構築された、GitHubリポジトリ管�
 
 ## 主要ユースケース
 
-1. 新規リポジトリの作成
+1. 新規リポジトリの作成（AI提案機能付き）
 2. 既存リポジトリのチームへの追加
 3. リポジトリの作成とチームへの追加（統合フロー）
 
@@ -19,6 +19,7 @@ TypeScriptとInk（CLI用React）で構築された、GitHubリポジトリ管�
 - **認証**: GitHub CLI（`gh`）の認証
 - **API**: GitHub GraphQL/REST API
 - **設定**: ローカルJSON保存（`~/.gh-usecases.json`）
+- **AI**: Google Gemini APIによるリポジトリ名・説明文の提案
 
 ### 主要コンポーネント
 
@@ -45,7 +46,19 @@ TypeScriptとInk（CLI用React）で構築された、GitHubリポジトリ管�
 
 - 選択された組織のチーム一覧を取得
 - 複数選択インターフェースをサポート
-- デフォルトチーム選択ロジックのプレースホルダー
+
+#### 5. AIサービス（Gemini）
+
+- リポジトリ名・説明文の自動提案
+  - カレントディレクトリ名を基準に提案
+  - *.mdファイルを自動読み込み（最大50KB）
+  - 追加コンテキストの入力も可能
+- チーム割り当ての自動提案
+  - 各チームの既存リポジトリ構成を分析
+  - リポジトリ名から適切なチームを推測
+  - 最大5チームまで提案（関連度順）
+- 環境変数 `GEMINI_API_KEY` または設定で有効化
+- AI不使用時は通常フローで動作
 
 ## ユーザーフロー
 
@@ -66,12 +79,14 @@ TypeScriptとInk（CLI用React）で構築された、GitHubリポジトリ管�
 ### リポジトリ作成フロー
 
 ```
-1. リポジトリ詳細の入力
-   ├─ Project name
-   ├─ Description
+1. AIコンテキストの入力（オプション）
+   └─ README内容やプロジェクト説明をペースト
+2. リポジトリ詳細の入力
+   ├─ Repository name（AI提案あり）
+   ├─ Description（AI提案あり）
    └─ Visibility (Private/Public)
-2. API経由でリポジトリ作成
-3. 成功メッセージの表示
+3. API経由でリポジトリ作成
+4. 成功メッセージの表示
 ```
 
 ### チームへの追加フロー
@@ -144,13 +159,14 @@ gh-usecases/
 │   │   ├── Auth.tsx
 │   │   ├── AccountSelector.tsx
 │   │   ├── UseCaseSelector.tsx
-│   │   ├── ProjectCreator.tsx
-│   │   ├── ProjectSelector.tsx
+│   │   ├── RepositoryCreator.tsx
+│   │   ├── RepositorySelector.tsx
 │   │   └── TeamSelector.tsx
 │   ├── services/
 │   │   ├── auth.ts
 │   │   ├── github-api.ts
-│   │   └── config.ts
+│   │   ├── config.ts
+│   │   └── gemini.ts
 │   ├── hooks/
 │   │   ├── useAuth.ts
 │   │   ├── useProjects.ts
@@ -184,7 +200,7 @@ interface Config {
   };
 }
 
-interface Project {
+interface Repository {
   id: string;
   name: string;
   description?: string;
@@ -285,13 +301,15 @@ query ListTeams($org: String!) {
 - 適切なフローへのルーティング
 - キーボードナビゲーションのサポート
 
-#### ProjectCreatorコンポーネント
+#### RepositoryCreatorコンポーネント
 
+- AIコンテキストの入力（Gemini API有効時）
 - 名前、説明、公開設定のフォーム入力
+- AI提案の適用
 - 送信前の検証
 - API失敗時のエラー処理
 
-#### ProjectSelectorコンポーネント
+#### RepositorySelectorコンポーネント
 
 - オートコンプリート検索入力
 - デバウンスされたAPI呼び出し
@@ -314,9 +332,6 @@ query ListTeams($org: String!) {
   "selectedAccount": {
     "type": "organization",
     "login": "my-org"
-  },
-  "defaultTeams": {
-    "my-org": ["team-1", "team-2"]
   }
 }
 ```
@@ -338,12 +353,6 @@ query ListTeams($org: String!) {
    - キャンセル → 優雅に終了
 
 ### 将来の拡張
-
-1. **デフォルトチーム選択**
-   - 以下に基づく`getDefaultTeamSelections()`の実装：
-     - 過去の選択
-     - チームパターン
-     - ユーザー設定
 
 2. **バッチ操作**
    - 複数リポジトリのチームへの追加

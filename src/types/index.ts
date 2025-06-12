@@ -3,6 +3,7 @@ export interface Config {
     type: 'personal' | 'organization';
     login: string;
   };
+  geminiApiKey?: string;
 }
 
 export interface Repository {
@@ -34,7 +35,7 @@ export interface CreateRepositoryInput {
   owner?: string; // For organization repos
 }
 
-export type UseCase = 'create' | 'add-to-teams' | 'create-and-add';
+export type UseCase = 'create' | 'add-to-teams' | 'create-and-add' | 'configure-gemini';
 
 export interface AppState {
   authState: AuthState | null;

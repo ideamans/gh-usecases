@@ -104,7 +104,14 @@ export class GitHubAPI {
       ownerId = await this.getOwnerId(input.owner, 'organization');
     }
     
-    const { createRepository } = await graphqlClient.request<{
+    console.log('Sending createRepository mutation with input:', {
+      name: input.name,
+      description: input.description || null,
+      visibility: input.visibility,
+      ...(ownerId && { ownerId }),
+    });
+
+    const response = await graphqlClient.request<{
       createRepository: {
         repository: {
           id: string;
@@ -139,13 +146,20 @@ export class GitHubAPI {
       },
     });
 
-    return {
+    console.log('createRepository mutation response:', JSON.stringify(response, null, 2));
+
+    const { createRepository } = response;
+    
+    const result = {
       id: createRepository.repository.id,
       name: createRepository.repository.name,
       description: createRepository.repository.description || '',
       visibility: createRepository.repository.isPrivate ? 'PRIVATE' : 'PUBLIC',
       owner: createRepository.repository.owner,
     };
+    
+    console.log('Returning repository object:', result);
+    return result;
   }
 
   async getOwnerId(login: string, type: 'user' | 'organization'): Promise<string> {
@@ -202,6 +216,56 @@ export class GitHubAPI {
     `, { org });
 
     return organization.teams.nodes;
+  }
+
+  async listTeamsWithRepositories(org: string): Promise<Array<Team & { repositories: Array<{ name: string; description?: string }> }>> {
+    const graphqlClient = await this.getGraphQLClient();
+    
+    const { organization } = await graphqlClient.request<{
+      organization: {
+        teams: {
+          nodes: Array<{
+            id: string;
+            name: string;
+            slug: string;
+            repositories: {
+              nodes: Array<{
+                name: string;
+                description: string | null;
+              }>;
+            };
+          }>;
+        };
+      };
+    }>(`
+      query ListTeamsWithRepos($org: String!) {
+        organization(login: $org) {
+          teams(first: 100) {
+            nodes {
+              id
+              name
+              slug
+              repositories(first: 20) {
+                nodes {
+                  name
+                  description
+                }
+              }
+            }
+          }
+        }
+      }
+    `, { org });
+
+    return organization.teams.nodes.map(team => ({
+      id: team.id,
+      name: team.name,
+      slug: team.slug,
+      repositories: team.repositories.nodes.map(repo => ({
+        name: repo.name,
+        description: repo.description || undefined,
+      })),
+    }));
   }
 
   async addRepositoryToTeams(repositoryId: string, teamIds: string[]): Promise<void> {

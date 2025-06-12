@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
@@ -9,13 +9,14 @@ import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
 import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
 import { TokenRefreshHint } from './TokenRefreshHint.js';
+import { geminiService } from '../services/gemini.js';
 
 interface RepositoryCreatorProps {
   account: Config['selectedAccount'];
   onRepositoryCreated: (repository: Repository) => void;
 }
 
-type Step = 'name' | 'description' | 'visibility' | 'creating';
+type Step = 'ai-loading' | 'name' | 'description' | 'visibility' | 'creating';
 
 const visibilityItems = [
   { label: 'Private', value: 'PRIVATE' as const },
@@ -23,11 +24,36 @@ const visibilityItems = [
 ];
 
 export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, onRepositoryCreated }) => {
-  const [step, setStep] = useState<Step>('name');
+  const [step, setStep] = useState<Step>('ai-loading');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<Error | null>(null);
   const [lastAttemptedVisibility, setLastAttemptedVisibility] = useState<'PRIVATE' | 'PUBLIC' | null>(null);
+  const [aiSuggested, setAiSuggested] = useState(false);
+  
+  useEffect(() => {
+    const getAISuggestions = async () => {
+      const available = await geminiService.isAvailable();
+      if (available) {
+        try {
+          const suggestion = await geminiService.suggestRepositoryDetails();
+          if (suggestion) {
+            setName(suggestion.name);
+            if (suggestion.description) {
+              setDescription(suggestion.description);
+            }
+            setAiSuggested(true);
+            InteractionHistory.record('action', 'AI Suggestion Applied', 
+              `Name: ${suggestion.name}${suggestion.description ? `, Description: ${suggestion.description}` : ''}`);
+          }
+        } catch (err) {
+          console.error('AI suggestion error:', err);
+        }
+      }
+      setStep('name');
+    };
+    getAISuggestions();
+  }, []);
   
   const { isRefreshing } = useTokenRefresh(() => {
     // Retry creation after token refresh if there was a permission error
@@ -37,6 +63,7 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
       createRepository(lastAttemptedVisibility);
     }
   });
+
 
   const handleNameSubmit = () => {
     if (!name.trim()) {
@@ -62,6 +89,8 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
 
   const createRepository = async (selectedVisibility: 'PRIVATE' | 'PUBLIC') => {
     try {
+      console.log('Creating repository with:', { name, description, visibility: selectedVisibility, owner: account.type === 'organization' ? account.login : undefined });
+      
       const repository = await GitHubAPI.createRepository({
         name,
         description: description || undefined,
@@ -69,8 +98,10 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
         owner: account.type === 'organization' ? account.login : undefined,
       });
 
+      console.log('Repository created successfully:', repository);
       onRepositoryCreated(repository);
     } catch (err) {
+      console.error('Repository creation error:', err);
       const error = err instanceof Error ? err : new Error('Failed to create repository');
       setError(error);
       
@@ -118,12 +149,31 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
     );
   }
 
+  if (step === 'ai-loading') {
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text bold>Preparing repository creation...</Text>
+        </Box>
+        <Box>
+          <Text color="blue">
+            <Spinner type="dots" />
+          </Text>
+          <Text> Getting AI suggestions based on current directory...</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {step === 'name' && (
         <>
           <Box marginBottom={1}>
             <Text bold>Enter repository name:</Text>
+            {aiSuggested && name && (
+              <Text color="green"> (AI suggested: {name})</Text>
+            )}
           </Box>
           <TextInput
             value={name}
@@ -142,6 +192,9 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
         <>
           <Box marginBottom={1}>
             <Text bold>Enter repository description (optional):</Text>
+            {aiSuggested && description && (
+              <Text color="green"> (AI suggested)</Text>
+            )}
           </Box>
           <TextInput
             value={description}
