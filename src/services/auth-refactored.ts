@@ -42,10 +42,18 @@ export class AuthService {
         const tokenMatch = configContent.match(/oauth_token:\s*(.+)/);
         if (tokenMatch) {
           return tokenMatch[1].trim();
+        } else {
+          console.error('認証トークンが設定ファイル内に見つかりません');
+          console.error('ファイルパス:', configPath);
         }
+      } else {
+        console.error('GitHub CLIの設定ファイルが存在しません');
+        console.error('期待されるファイルパス:', configPath);
+        console.error('解決方法: gh auth login コマンドを実行してGitHubにログインしてください');
       }
     } catch (error) {
-      console.error('Error reading gh config:', error);
+      console.error('認証設定ファイルの読み込みエラー:', error);
+      console.error('期待されるファイルパス:', configPath);
     }
     return undefined;
   }
@@ -79,7 +87,7 @@ export class AuthService {
     const authState = await this.checkAuthStatus();
     
     if (!authState.isAuthenticated) {
-      throw new Error('Not authenticated. Please run gh auth login first.');
+      throw new Error('認証されていません。まず `gh auth login` コマンドを実行してGitHubにログインしてください。');
     }
 
     const missingScopes = requiredScopes.filter(

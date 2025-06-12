@@ -5,30 +5,29 @@ import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { Config, Project } from '../types/index.js';
+import { formatErrorDisplay } from '../utils/error-messages.js';
 
 interface ProjectCreatorProps {
   account: Config['selectedAccount'];
   onProjectCreated: (project: Project) => void;
-  onCancel: () => void;
 }
 
 type Step = 'name' | 'description' | 'visibility' | 'creating';
 
 const visibilityItems = [
-  { label: 'Private', value: 'PRIVATE' as const },
-  { label: 'Public', value: 'PUBLIC' as const },
+  { label: 'プライベート（非公開）', value: 'PRIVATE' as const },
+  { label: 'パブリック（公開）', value: 'PUBLIC' as const },
 ];
 
-export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProjectCreated, onCancel }) => {
+export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProjectCreated }) => {
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<'PRIVATE' | 'PUBLIC'>('PRIVATE');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const handleNameSubmit = () => {
     if (!name.trim()) {
-      setError('Project name is required');
+      setError(new Error('プロジェクト名は必須です'));
       return;
     }
     setError(null);
@@ -40,7 +39,6 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
   };
 
   const handleVisibilitySelect = async (item: { value: 'PRIVATE' | 'PUBLIC' }) => {
-    setVisibility(item.value);
     setStep('creating');
     await createProject(item.value);
   };
@@ -61,16 +59,23 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
 
       onProjectCreated(project);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project');
+      setError(err instanceof Error ? err : new Error('プロジェクトの作成に失敗しました'));
       setStep('name');
     }
   };
 
   if (error) {
+    const errorLines = formatErrorDisplay(error);
     return (
       <Box flexDirection="column">
-        <Text color="red">Error: {error}</Text>
-        <Text>Press any key to continue...</Text>
+        {errorLines.map((line, index) => (
+          <Text key={index} color={line.startsWith('❌') ? 'red' : undefined}>
+            {line}
+          </Text>
+        ))}
+        <Box marginTop={1}>
+          <Text dimColor>任意のキーを押して続行...</Text>
+        </Box>
       </Box>
     );
   }
@@ -81,7 +86,7 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> Creating project...</Text>
+        <Text> プロジェクトを作成中...</Text>
       </Box>
     );
   }
@@ -91,16 +96,16 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       {step === 'name' && (
         <>
           <Box marginBottom={1}>
-            <Text bold>Enter project name:</Text>
+            <Text bold>プロジェクト名を入力してください:</Text>
           </Box>
           <TextInput
             value={name}
             onChange={setName}
             onSubmit={handleNameSubmit}
-            placeholder="My Project"
+            placeholder="例: My Project"
           />
           <Box marginTop={1}>
-            <Text dimColor>Press Enter to continue or Ctrl+C to cancel</Text>
+            <Text dimColor>Enterで次へ、Ctrl+Cでキャンセル</Text>
           </Box>
         </>
       )}
@@ -108,16 +113,16 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       {step === 'description' && (
         <>
           <Box marginBottom={1}>
-            <Text bold>Enter project description (optional):</Text>
+            <Text bold>プロジェクトの説明を入力してください（任意）:</Text>
           </Box>
           <TextInput
             value={description}
             onChange={setDescription}
             onSubmit={handleDescriptionSubmit}
-            placeholder="Project description..."
+            placeholder="プロジェクトの説明..."
           />
           <Box marginTop={1}>
-            <Text dimColor>Press Enter to continue</Text>
+            <Text dimColor>Enterで次へ</Text>
           </Box>
         </>
       )}
@@ -125,7 +130,7 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       {step === 'visibility' && (
         <>
           <Box marginBottom={1}>
-            <Text bold>Select project visibility:</Text>
+            <Text bold>プロジェクトの公開設定を選択してください:</Text>
           </Box>
           <SelectInput items={visibilityItems} onSelect={handleVisibilitySelect} />
         </>

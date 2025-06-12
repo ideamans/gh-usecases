@@ -42,7 +42,9 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
 
       setAccounts(accountOptions);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load accounts');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load accounts';
+      console.error('アカウント読み込みエラー:', errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,9 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
       await ConfigService.setSelectedAccount(item.value);
       onAccountSelected(item.value);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save selection');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save selection';
+      console.error('アカウント選択保存エラー:', errorMessage);
+      setError(errorMessage);
     }
   };
 
@@ -69,9 +73,49 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
   }
 
   if (error) {
+    const isNetworkError = error.toLowerCase().includes('network') || error.toLowerCase().includes('fetch');
+    const isPermissionError = error.toLowerCase().includes('permission') || error.toLowerCase().includes('scope');
+    
     return (
-      <Box flexDirection="column">
-        <Text color="red">Error: {error}</Text>
+      <Box flexDirection="column" marginY={1}>
+        <Text color="red" bold>アカウント読み込みエラー</Text>
+        <Text color="red">エラー内容: {error}</Text>
+        <Box marginTop={1}>
+          <Text color="yellow">考えられる原因:</Text>
+        </Box>
+        {isNetworkError && (
+          <Box marginLeft={2}>
+            <Text>• ネットワーク接続に問題があります</Text>
+            <Text>• GitHub APIに接続できません</Text>
+          </Box>
+        )}
+        {isPermissionError && (
+          <Box marginLeft={2}>
+            <Text>• 必要な権限が不足しています</Text>
+            <Text>• 組織情報へのアクセス権限がありません</Text>
+          </Box>
+        )}
+        {!isNetworkError && !isPermissionError && (
+          <Box marginLeft={2}>
+            <Text>• GitHubアカウントの設定に問題があります</Text>
+            <Text>• APIレート制限に達している可能性があります</Text>
+          </Box>
+        )}
+        <Box marginTop={1}>
+          <Text color="green">解決方法:</Text>
+        </Box>
+        <Box marginLeft={2}>
+          <Text>1. インターネット接続を確認してください</Text>
+          <Text>2. 以下のコマンドで認証状態を確認してください:</Text>
+          <Text>   <Text color="cyan" bold>gh auth status</Text></Text>
+          {isPermissionError && (
+            <>
+              <Text>3. 必要な権限でログインし直してください:</Text>
+              <Text>   <Text color="cyan" bold>gh auth login --scopes read:org</Text></Text>
+            </>
+          )}
+          <Text>{isPermissionError ? '4' : '3'}. 問題が続く場合は、しばらく待ってから再度お試しください</Text>
+        </Box>
       </Box>
     );
   }

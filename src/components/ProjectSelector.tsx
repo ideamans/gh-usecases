@@ -5,6 +5,7 @@ import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { Config, Project } from '../types/index.js';
+import { formatErrorDisplay } from '../utils/error-messages.js';
 
 interface ProjectSelectorProps {
   account: Config['selectedAccount'];
@@ -16,7 +17,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
 
@@ -51,7 +52,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
       setProjects(results);
       setShowResults(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search projects');
+      setError(err instanceof Error ? err : new Error('Failed to search projects'));
       setProjects([]);
     } finally {
       setSearching(false);
@@ -71,10 +72,17 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   };
 
   if (error) {
+    const errorLines = formatErrorDisplay(error);
     return (
       <Box flexDirection="column">
-        <Text color="red">Error: {error}</Text>
-        <Text>Press any key to continue...</Text>
+        {errorLines.map((line, index) => (
+          <Text key={index} color={line.startsWith('❌') ? 'red' : undefined}>
+            {line}
+          </Text>
+        ))}
+        <Box marginTop={1}>
+          <Text dimColor>Ctrl+Cで終了、その他のキーで検索に戻る</Text>
+        </Box>
       </Box>
     );
   }
@@ -88,11 +96,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
-          <Text bold>Select a project:</Text>
+          <Text bold>プロジェクトを選択してください:</Text>
         </Box>
         <SelectInput items={projectItems} onSelect={handleProjectSelect} />
         <Box marginTop={1}>
-          <Text dimColor>Press Esc to go back to search</Text>
+          <Text dimColor>Escで検索に戻る</Text>
         </Box>
       </Box>
     );
@@ -101,14 +109,14 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>Search for a project:</Text>
+        <Text bold>プロジェクトを検索:</Text>
       </Box>
       <Box>
         <TextInput
           value={searchQuery}
           onChange={setSearchQuery}
           onSubmit={handleSearchSubmit}
-          placeholder="Start typing to search..."
+          placeholder="検索キーワードを入力..."
         />
         {searching && (
           <Box marginLeft={1}>
@@ -120,11 +128,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
       </Box>
       {searchQuery && !searching && projects.length === 0 && (
         <Box marginTop={1}>
-          <Text dimColor>No projects found</Text>
+          <Text dimColor>プロジェクトが見つかりません</Text>
         </Box>
       )}
       <Box marginTop={1}>
-        <Text dimColor>Press Ctrl+C to cancel</Text>
+        <Text dimColor>Ctrl+Cでキャンセル</Text>
       </Box>
     </Box>
   );

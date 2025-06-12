@@ -4,6 +4,7 @@ import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { ConfigService } from '../services/config.js';
 import { Config, Team, Project } from '../types/index.js';
+import { formatErrorDisplay } from '../utils/error-messages.js';
 
 interface TeamSelectorProps {
   account: Config['selectedAccount'];
@@ -34,14 +35,14 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (account.type === 'organization') {
       loadTeams();
     } else {
-      setError('Personal accounts cannot have teams');
+      setError(new Error('個人アカウントにはチーム機能がありません'));
       setLoading(false);
     }
   }, [account]);
@@ -59,7 +60,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
       );
       setSelectedTeamIds(defaultSet);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load teams');
+      setError(err instanceof Error ? err : new Error('チームの読み込みに失敗しました'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
   const handleSubmit = async () => {
     if (selectedTeamIds.size === 0) {
-      setError('Please select at least one team');
+      setError(new Error('少なくとも1つのチームを選択してください'));
       return;
     }
 
@@ -114,7 +115,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
       onTeamsSelected(selectedTeams);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add project to teams');
+      setError(err instanceof Error ? err : new Error('プロジェクトをチームに追加できませんでした'));
       setSubmitting(false);
     }
   };
@@ -125,15 +126,23 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> Loading teams...</Text>
+        <Text> チームを読み込み中...</Text>
       </Box>
     );
   }
 
   if (error && !teams.length) {
+    const errorLines = formatErrorDisplay(error);
     return (
       <Box flexDirection="column">
-        <Text color="red">Error: {error}</Text>
+        {errorLines.map((line, index) => (
+          <Text key={index} color={line.startsWith('❌') ? 'red' : undefined}>
+            {line}
+          </Text>
+        ))}
+        <Box marginTop={1}>
+          <Text dimColor>Ctrl+Cで終了</Text>
+        </Box>
       </Box>
     );
   }
@@ -144,7 +153,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> Adding project to teams...</Text>
+        <Text> プロジェクトをチームに追加中...</Text>
       </Box>
     );
   }
@@ -152,12 +161,16 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>Select teams to add the project to:</Text>
+        <Text bold>プロジェクトを追加するチームを選択してください:</Text>
       </Box>
       
       {error && (
-        <Box marginBottom={1}>
-          <Text color="red">{error}</Text>
+        <Box marginBottom={1} flexDirection="column">
+          {formatErrorDisplay(error).map((line, index) => (
+            <Text key={index} color={line.startsWith('❌') ? 'red' : undefined}>
+              {line}
+            </Text>
+          ))}
         </Box>
       )}
 
@@ -173,9 +186,9 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
       </Box>
 
       <Box marginTop={1} flexDirection="column">
-        <Text dimColor>Space: Toggle selection</Text>
-        <Text dimColor>Enter: Confirm selection</Text>
-        <Text dimColor>Escape: Cancel</Text>
+        <Text dimColor>スペース: 選択/選択解除</Text>
+        <Text dimColor>Enter: 選択を確定</Text>
+        <Text dimColor>Escape: キャンセル</Text>
       </Box>
     </Box>
   );
