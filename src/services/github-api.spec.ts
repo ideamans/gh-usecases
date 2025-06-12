@@ -213,3 +213,60 @@ test('addRepositoryToTeams adds repository to multiple teams', async t => {
   
   t.true((graphqlClient.request as sinon.SinonStub).calledOnce);
 });
+
+test('listTeamsWithRepositories returns teams with their repositories', async t => {
+  const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
+  const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
+  
+  (authTokenProvider.getToken as sinon.SinonStub).resolves('test-token');
+  (graphqlClient.request as sinon.SinonStub).resolves({
+    organization: {
+      teams: {
+        nodes: [
+          {
+            id: 'team1',
+            name: 'Frontend Team',
+            slug: 'frontend',
+            repositories: {
+              nodes: [
+                { name: 'react-app', description: 'React application' },
+                { name: 'vue-app', description: null },
+              ],
+            },
+          },
+          {
+            id: 'team2',
+            name: 'Backend Team', 
+            slug: 'backend',
+            repositories: {
+              nodes: [
+                { name: 'api-server', description: 'API server' },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  
+  const result = await api.listTeamsWithRepositories('testorg');
+  
+  t.is(result.length, 2);
+  t.deepEqual(result[0], {
+    id: 'team1',
+    name: 'Frontend Team',
+    slug: 'frontend',
+    repositories: [
+      { name: 'react-app', description: 'React application' },
+      { name: 'vue-app', description: undefined },
+    ],
+  });
+  t.deepEqual(result[1], {
+    id: 'team2',
+    name: 'Backend Team',
+    slug: 'backend', 
+    repositories: [
+      { name: 'api-server', description: 'API server' },
+    ],
+  });
+});
