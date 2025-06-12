@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
-const Spinner = require('ink-spinner').default;
+import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { ConfigService } from '../services/config.js';
 import { Config } from '../types/index.js';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
-const Spinner = require('ink-spinner').default;
+import Spinner from 'ink-spinner';
 import { AuthService } from '../services/auth.js';
 import { AuthState } from '../types/index.js';
 

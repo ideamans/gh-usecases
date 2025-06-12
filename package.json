@@ -21,6 +21,7 @@
     "fs-extra": "^11.2.0",
     "ink": "^4.4.1",
     "ink-select-input": "^5.0.0",
+    "ink-spinner": "^5.0.0",
     "ink-text-input": "^5.0.1",
     "os": "^0.1.2",
     "path": "^0.12.7",

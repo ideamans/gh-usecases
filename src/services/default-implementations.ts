@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import { ICommandExecutor, IFileSystem, IGitHubCliConfig, IEnvironment } from '../interfaces/index.js';
