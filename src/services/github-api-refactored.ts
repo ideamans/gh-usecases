@@ -90,7 +90,7 @@ export class GitHubAPI {
       id: node.id,
       name: node.name,
       description: node.description || '',
-      visibility: node.isPrivate ? 'PRIVATE' : 'PUBLIC',
+      visibility: node.isPrivate ? 'PRIVATE' as const : 'PUBLIC' as const,
       owner: node.owner,
     }));
   }
@@ -104,12 +104,6 @@ export class GitHubAPI {
       ownerId = await this.getOwnerId(input.owner, 'organization');
     }
     
-    console.log('Sending createRepository mutation with input:', {
-      name: input.name,
-      description: input.description || null,
-      visibility: input.visibility,
-      ...(ownerId && { ownerId }),
-    });
 
     const response = await graphqlClient.request<{
       createRepository: {
@@ -146,19 +140,17 @@ export class GitHubAPI {
       },
     });
 
-    console.log('createRepository mutation response:', JSON.stringify(response, null, 2));
 
     const { createRepository } = response;
     
-    const result = {
+    const result: Repository = {
       id: createRepository.repository.id,
       name: createRepository.repository.name,
       description: createRepository.repository.description || '',
-      visibility: createRepository.repository.isPrivate ? 'PRIVATE' : 'PUBLIC',
+      visibility: createRepository.repository.isPrivate ? 'PRIVATE' as const : 'PUBLIC' as const,
       owner: createRepository.repository.owner,
     };
     
-    console.log('Returning repository object:', result);
     return result;
   }
 

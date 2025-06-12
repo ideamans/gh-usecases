@@ -33,10 +33,8 @@ export const App: React.FC = () => {
   };
 
   const handleRepositoryCreated = (repository: Repository) => {
-    console.log('handleRepositoryCreated called with:', repository);
     setAppState(prev => ({ ...prev, createdRepository: repository }));
     setShowInstructions(true);
-    console.log('showInstructions set to true');
   };
 
   const handleRepositorySelected = (repository: Repository) => {

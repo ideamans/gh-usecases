@@ -136,7 +136,7 @@ test('ensureScopes throws error when not authenticated', async t => {
   
   await t.throwsAsync(
     authService.ensureScopes(['repo']),
-    { message: 'Not authenticated. Please run gh auth login first.' }
+    { message: 'Not authenticated. Please run `gh auth login` first to authenticate with GitHub.' }
   );
 });
 

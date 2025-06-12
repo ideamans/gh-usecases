@@ -41,9 +41,6 @@ test('load returns config when file exists', async t => {
       type: 'organization',
       login: 'test-org',
     },
-    defaultTeams: {
-      'test-org': ['team-1', 'team-2'],
-    },
   };
   
   (fileSystem.pathExists as sinon.SinonStub).resolves(true);
@@ -168,9 +165,7 @@ test('setSelectedAccount updates existing config', async t => {
       type: 'personal',
       login: 'old-user',
     },
-    defaultTeams: {
-      'some-org': ['team-a'],
-    },
+    geminiApiKey: 'existing-key',
   };
   
   const newAccount = {
@@ -187,7 +182,7 @@ test('setSelectedAccount updates existing config', async t => {
   
   const savedConfig = (fileSystem.writeJson as sinon.SinonStub).firstCall.args[1];
   t.deepEqual(savedConfig.selectedAccount, newAccount);
-  t.deepEqual(savedConfig.defaultTeams, existingConfig.defaultTeams);
+  t.is(savedConfig.geminiApiKey, existingConfig.geminiApiKey);
 });
 
 test('setSelectedAccount creates new config when none exists', async t => {
@@ -207,94 +202,4 @@ test('setSelectedAccount creates new config when none exists', async t => {
   
   const savedConfig = (fileSystem.writeJson as sinon.SinonStub).firstCall.args[1];
   t.deepEqual(savedConfig, { selectedAccount: newAccount });
-});
-
-test('getDefaultTeams returns teams for organization', async t => {
-  const { fileSystem, environment } = createMocks();
-  const configService = new ConfigService(fileSystem, environment);
-  
-  const mockConfig: Config = {
-    selectedAccount: {
-      type: 'organization',
-      login: 'test-org',
-    },
-    defaultTeams: {
-      'test-org': ['team-1', 'team-2'],
-      'other-org': ['team-3'],
-    },
-  };
-  
-  (fileSystem.pathExists as sinon.SinonStub).resolves(true);
-  (fileSystem.readJson as sinon.SinonStub).resolves(mockConfig);
-  
-  const result = await configService.getDefaultTeams('test-org');
-  
-  t.deepEqual(result, ['team-1', 'team-2']);
-});
-
-test('getDefaultTeams returns empty array when no teams configured', async t => {
-  const { fileSystem, environment } = createMocks();
-  const configService = new ConfigService(fileSystem, environment);
-  
-  const mockConfig: Config = {
-    selectedAccount: {
-      type: 'organization',
-      login: 'test-org',
-    },
-  };
-  
-  (fileSystem.pathExists as sinon.SinonStub).resolves(true);
-  (fileSystem.readJson as sinon.SinonStub).resolves(mockConfig);
-  
-  const result = await configService.getDefaultTeams('test-org');
-  
-  t.deepEqual(result, []);
-});
-
-test('setDefaultTeams updates teams for organization', async t => {
-  const { fileSystem, environment } = createMocks();
-  const configService = new ConfigService(fileSystem, environment);
-  
-  const existingConfig: Config = {
-    selectedAccount: {
-      type: 'organization',
-      login: 'test-org',
-    },
-    defaultTeams: {
-      'other-org': ['team-a'],
-    },
-  };
-  
-  (fileSystem.pathExists as sinon.SinonStub).resolves(true);
-  (fileSystem.readJson as sinon.SinonStub).resolves(existingConfig);
-  (fileSystem.ensureDir as sinon.SinonStub).resolves();
-  (fileSystem.writeJson as sinon.SinonStub).resolves();
-  
-  await configService.setDefaultTeams('test-org', ['team-1', 'team-2']);
-  
-  const savedConfig = (fileSystem.writeJson as sinon.SinonStub).firstCall.args[1];
-  t.deepEqual(savedConfig.defaultTeams['test-org'], ['team-1', 'team-2']);
-  t.deepEqual(savedConfig.defaultTeams['other-org'], ['team-a']);
-});
-
-test('setDefaultTeams creates defaultTeams when none exists', async t => {
-  const { fileSystem, environment } = createMocks();
-  const configService = new ConfigService(fileSystem, environment);
-  
-  const existingConfig: Config = {
-    selectedAccount: {
-      type: 'organization',
-      login: 'test-org',
-    },
-  };
-  
-  (fileSystem.pathExists as sinon.SinonStub).resolves(true);
-  (fileSystem.readJson as sinon.SinonStub).resolves(existingConfig);
-  (fileSystem.ensureDir as sinon.SinonStub).resolves();
-  (fileSystem.writeJson as sinon.SinonStub).resolves();
-  
-  await configService.setDefaultTeams('test-org', ['team-1']);
-  
-  const savedConfig = (fileSystem.writeJson as sinon.SinonStub).firstCall.args[1];
-  t.deepEqual(savedConfig.defaultTeams, { 'test-org': ['team-1'] });
 });

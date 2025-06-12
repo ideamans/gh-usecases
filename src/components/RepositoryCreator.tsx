@@ -89,7 +89,6 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
 
   const createRepository = async (selectedVisibility: 'PRIVATE' | 'PUBLIC') => {
     try {
-      console.log('Creating repository with:', { name, description, visibility: selectedVisibility, owner: account.type === 'organization' ? account.login : undefined });
       
       const repository = await GitHubAPI.createRepository({
         name,
@@ -98,10 +97,8 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
         owner: account.type === 'organization' ? account.login : undefined,
       });
 
-      console.log('Repository created successfully:', repository);
       onRepositoryCreated(repository);
     } catch (err) {
-      console.error('Repository creation error:', err);
       const error = err instanceof Error ? err : new Error('Failed to create repository');
       setError(error);
       
