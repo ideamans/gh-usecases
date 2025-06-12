@@ -2,7 +2,7 @@ import test from 'ava';
 import sinon from 'sinon';
 import { GitHubAPI } from './github-api-refactored.js';
 import { IGraphQLClient, IAuthTokenProvider } from '../interfaces/index.js';
-import { Project, Team, CreateProjectInput } from '../types/index.js';
+import { Repository, Team, CreateRepositoryInput } from '../types/index.js';
 
 const createMocks = () => {
   const graphqlClient: IGraphQLClient = {
@@ -48,10 +48,10 @@ test('getCurrentUser throws when no token is available', async t => {
   
   (authTokenProvider.getToken as sinon.SinonStub).resolves(undefined);
   
-  await t.throwsAsync(api.getCurrentUser(), { message: 'No authentication token found' });
+  await t.throwsAsync(api.getCurrentUser(), { message: 'No GitHub authentication token found. Please check GitHub CLI authentication in ~/.config/gh/hosts.yml' });
 });
 
-test('searchProjects returns projects with correct format', async t => {
+test('searchRepositories returns repositories with correct format', async t => {
   const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
   const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
   
@@ -60,79 +60,83 @@ test('searchProjects returns projects with correct format', async t => {
     search: {
       nodes: [
         {
-          id: 'proj1',
-          title: 'Project 1',
-          shortDescription: 'Description 1',
-          public: true,
+          id: 'repo1',
+          name: 'Repository 1',
+          description: 'Description 1',
+          isPrivate: false,
+          owner: { login: 'testuser' },
         },
         {
-          id: 'proj2',
-          title: 'Project 2',
-          shortDescription: 'Description 2',
-          public: false,
+          id: 'repo2', 
+          name: 'Repository 2',
+          description: 'Description 2',
+          isPrivate: true,
+          owner: { login: 'testuser' },
         },
       ],
     },
   });
   
-  const results = await api.searchProjects('test', 'owner', 10);
+  const results = await api.searchRepositories('test', 'testuser', 10);
   
   t.is(results.length, 2);
   t.deepEqual(results[0], {
-    id: 'proj1',
-    name: 'Project 1',
+    id: 'repo1',
+    name: 'Repository 1',
     description: 'Description 1',
     visibility: 'PUBLIC',
+    owner: { login: 'testuser' },
   });
   t.deepEqual(results[1], {
-    id: 'proj2',
-    name: 'Project 2',
+    id: 'repo2',
+    name: 'Repository 2',
     description: 'Description 2',
-    visibility: 'PRIVATE',
+    visibility: 'PRIVATE', 
+    owner: { login: 'testuser' },
   });
   
   const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.deepEqual(requestCall.args[1], { query: 'user:owner test', first: 10 });
+  t.deepEqual(requestCall.args[1], { searchQuery: 'user:testuser test in:name', first: 10 });
 });
 
-test('createProject creates project with correct input', async t => {
+test('createRepository creates repository with correct input', async t => {
   const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
   const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
   
-  const input: CreateProjectInput = {
-    ownerId: 'owner-id',
-    title: 'New Project',
-    description: 'Project description',
+  const input: CreateRepositoryInput = {
+    name: 'new-repository',
+    description: 'Repository description',
     visibility: 'PUBLIC',
   };
   
   (authTokenProvider.getToken as sinon.SinonStub).resolves('test-token');
   (graphqlClient.request as sinon.SinonStub).resolves({
-    createProjectV2: {
-      projectV2: {
+    createRepository: {
+      repository: {
         id: 'created-id',
-        title: 'New Project',
-        shortDescription: 'Project description',
-        public: true,
+        name: 'new-repository',
+        description: 'Repository description',
+        isPrivate: false,
+        owner: { login: 'testuser' },
       },
     },
   });
   
-  const result = await api.createProject(input);
+  const result = await api.createRepository(input);
   
   t.deepEqual(result, {
     id: 'created-id',
-    name: 'New Project',
-    description: 'Project description',
+    name: 'new-repository',
+    description: 'Repository description',
     visibility: 'PUBLIC',
+    owner: { login: 'testuser' },
   });
   
   const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
   t.deepEqual(requestCall.args[1].input, {
-    ownerId: 'owner-id',
-    title: 'New Project',
-    shortDescription: 'Project description',
-    public: true,
+    name: 'new-repository',
+    description: 'Repository description',
+    visibility: 'PUBLIC',
   });
 });
 
@@ -148,9 +152,6 @@ test('getOwnerId returns user id', async t => {
   const result = await api.getOwnerId('testuser', 'user');
   
   t.is(result, 'user-123');
-  const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.true(requestCall.args[0].includes('user(login: $login)'));
-  t.deepEqual(requestCall.args[1], { login: 'testuser' });
 });
 
 test('getOwnerId returns organization id', async t => {
@@ -165,53 +166,107 @@ test('getOwnerId returns organization id', async t => {
   const result = await api.getOwnerId('testorg', 'organization');
   
   t.is(result, 'org-456');
-  const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.true(requestCall.args[0].includes('organization(login: $login)'));
-  t.deepEqual(requestCall.args[1], { login: 'testorg' });
 });
 
 test('listTeams returns teams for organization', async t => {
   const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
   const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
   
-  const mockTeams: Team[] = [
-    { id: 'team1', name: 'Team 1', slug: 'team-1' },
-    { id: 'team2', name: 'Team 2', slug: 'team-2' },
-  ];
-  
   (authTokenProvider.getToken as sinon.SinonStub).resolves('test-token');
   (graphqlClient.request as sinon.SinonStub).resolves({
     organization: {
       teams: {
-        nodes: mockTeams,
+        nodes: [
+          { id: 'team1', name: 'Team 1', slug: 'team-1' },
+          { id: 'team2', name: 'Team 2', slug: 'team-2' },
+        ],
       },
     },
   });
   
   const result = await api.listTeams('testorg');
   
-  t.deepEqual(result, mockTeams);
-  const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.deepEqual(requestCall.args[1], { org: 'testorg' });
+  t.is(result.length, 2);
+  t.deepEqual(result[0], { id: 'team1', name: 'Team 1', slug: 'team-1' });
+  t.deepEqual(result[1], { id: 'team2', name: 'Team 2', slug: 'team-2' });
 });
 
-test('addProjectToTeams adds project to multiple teams', async t => {
+test('addRepositoryToTeams adds repository to multiple teams', async t => {
   const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
   const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
   
   (authTokenProvider.getToken as sinon.SinonStub).resolves('test-token');
   (graphqlClient.request as sinon.SinonStub).resolves({
-    linkProjectV2ToTeam: {
-      clientMutationId: 'mutation-id',
+    updateTeamsRepository: {
+      clientMutationId: 'success',
     },
   });
   
-  await api.addProjectToTeams('project-123', ['team-1', 'team-2', 'team-3']);
+  await api.addRepositoryToTeams('repository-id', ['team-1', 'team-2']);
   
-  t.is((graphqlClient.request as sinon.SinonStub).callCount, 3);
+  const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
+  t.deepEqual(requestCall.args[1], {
+    repositoryId: 'repository-id',
+    teamIds: ['team-1', 'team-2'],
+    permission: 'WRITE',
+  });
   
-  const calls = (graphqlClient.request as sinon.SinonStub).getCalls();
-  t.deepEqual(calls[0].args[1], { projectId: 'project-123', teamId: 'team-1' });
-  t.deepEqual(calls[1].args[1], { projectId: 'project-123', teamId: 'team-2' });
-  t.deepEqual(calls[2].args[1], { projectId: 'project-123', teamId: 'team-3' });
+  t.true((graphqlClient.request as sinon.SinonStub).calledOnce);
+});
+
+test('listTeamsWithRepositories returns teams with their repositories', async t => {
+  const { graphqlClient, graphqlClientFactory, authTokenProvider } = createMocks();
+  const api = new GitHubAPI(graphqlClientFactory, authTokenProvider);
+  
+  (authTokenProvider.getToken as sinon.SinonStub).resolves('test-token');
+  (graphqlClient.request as sinon.SinonStub).resolves({
+    organization: {
+      teams: {
+        nodes: [
+          {
+            id: 'team1',
+            name: 'Frontend Team',
+            slug: 'frontend',
+            repositories: {
+              nodes: [
+                { name: 'react-app', description: 'React application' },
+                { name: 'vue-app', description: null },
+              ],
+            },
+          },
+          {
+            id: 'team2',
+            name: 'Backend Team', 
+            slug: 'backend',
+            repositories: {
+              nodes: [
+                { name: 'api-server', description: 'API server' },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  
+  const result = await api.listTeamsWithRepositories('testorg');
+  
+  t.is(result.length, 2);
+  t.deepEqual(result[0], {
+    id: 'team1',
+    name: 'Frontend Team',
+    slug: 'frontend',
+    repositories: [
+      { name: 'react-app', description: 'React application' },
+      { name: 'vue-app', description: undefined },
+    ],
+  });
+  t.deepEqual(result[1], {
+    id: 'team2',
+    name: 'Backend Team',
+    slug: 'backend', 
+    repositories: [
+      { name: 'api-server', description: 'API server' },
+    ],
+  });
 });

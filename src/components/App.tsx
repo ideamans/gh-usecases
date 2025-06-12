@@ -6,6 +6,8 @@ import { UseCaseSelector } from './UseCaseSelector.js';
 import { RepositoryCreator } from './RepositoryCreator.js';
 import { RepositorySelector } from './RepositorySelector.js';
 import { TeamSelector } from './TeamSelector.js';
+import { GeminiConfigurator } from './GeminiConfigurator.js';
+import { RepositoryInstructions } from './RepositoryInstructions.js';
 import { AppState, AuthState, Config, Repository, Team, UseCase } from '../types/index.js';
 
 export const App: React.FC = () => {
@@ -16,6 +18,7 @@ export const App: React.FC = () => {
     currentUseCase: null,
     createdRepository: null,
   });
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const handleAuthComplete = (authState: AuthState) => {
     setAppState(prev => ({ ...prev, authState }));
@@ -31,11 +34,7 @@ export const App: React.FC = () => {
 
   const handleRepositoryCreated = (repository: Repository) => {
     setAppState(prev => ({ ...prev, createdRepository: repository }));
-    
-    if (appState.currentUseCase === 'create') {
-      exit();
-      console.log(`\n✅ Repository "${repository.name}" created successfully!`);
-    }
+    setShowInstructions(true);
   };
 
   const handleRepositorySelected = (repository: Repository) => {
@@ -65,14 +64,47 @@ export const App: React.FC = () => {
       return <UseCaseSelector onUseCaseSelected={handleUseCaseSelected} />;
     }
 
-    if (appState.currentUseCase === 'create' || 
-        (appState.currentUseCase === 'create-and-add' && !appState.createdRepository)) {
+    if (appState.currentUseCase === 'configure-gemini') {
+      return (
+        <GeminiConfigurator
+          onConfigured={() => {
+            setAppState(prev => ({ ...prev, currentUseCase: null }));
+          }}
+        />
+      );
+    }
+
+    if ((appState.currentUseCase === 'create' && !showInstructions) || 
+        (appState.currentUseCase === 'create-and-add' && !appState.createdRepository && !showInstructions)) {
       return (
         <RepositoryCreator
           account={appState.selectedAccount}
           onRepositoryCreated={handleRepositoryCreated}
         />
       );
+    }
+
+    if (showInstructions && appState.createdRepository) {
+      if (appState.currentUseCase === 'create') {
+        // For create-only, show instructions and exit
+        return (
+          <RepositoryInstructions
+            repository={appState.createdRepository}
+            account={appState.selectedAccount}
+            showContinuePrompt={false}
+          />
+        );
+      } else if (appState.currentUseCase === 'create-and-add') {
+        // For create-and-add, show instructions with continue prompt
+        return (
+          <RepositoryInstructions
+            repository={appState.createdRepository}
+            account={appState.selectedAccount}
+            showContinuePrompt={true}
+            onContinue={() => setShowInstructions(false)}
+          />
+        );
+      }
     }
 
     if (appState.currentUseCase === 'add-to-teams' && !appState.createdRepository) {
@@ -87,6 +119,7 @@ export const App: React.FC = () => {
 
     if ((appState.currentUseCase === 'add-to-teams' || appState.currentUseCase === 'create-and-add') 
         && appState.createdRepository
+        && !showInstructions
         && appState.selectedAccount.type === 'organization') {
       return (
         <TeamSelector
@@ -100,10 +133,13 @@ export const App: React.FC = () => {
 
     if (appState.selectedAccount.type === 'personal' && 
         (appState.currentUseCase === 'add-to-teams' || 
-         (appState.currentUseCase === 'create-and-add' && appState.createdRepository))) {
-      exit();
-      console.log('\n⚠️  Personal accounts cannot have teams.');
-      return null;
+         (appState.currentUseCase === 'create-and-add' && appState.createdRepository && !showInstructions))) {
+      return (
+        <Box flexDirection="column">
+          <Text color="yellow">⚠️  Personal accounts cannot have teams.</Text>
+          <Text dimColor>Team features are only available for organization accounts.</Text>
+        </Box>
+      );
     }
 
     return null;

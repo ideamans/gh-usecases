@@ -8,6 +8,7 @@ import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
 import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
 import { TokenRefreshHint } from './TokenRefreshHint.js';
+import { geminiService, TeamWithRepositories } from '../services/gemini.js';
 
 interface TeamSelectorProps {
   account: Config['selectedAccount'];
@@ -17,17 +18,19 @@ interface TeamSelectorProps {
 }
 
 interface TeamItemProps {
-  team: Team;
+  team: TeamWithRepositories;
   isSelected: boolean;
   isFocused: boolean;
+  isAISuggested: boolean;
 }
 
-const TeamItem: React.FC<TeamItemProps> = ({ team, isSelected, isFocused }) => {
+const TeamItem: React.FC<TeamItemProps> = ({ team, isSelected, isFocused, isAISuggested }) => {
   return (
     <Box>
       <Text color={isFocused ? 'blue' : undefined}>
         {isSelected ? '[✓] ' : '[ ] '}
         {team.name}
+        {isAISuggested && <Text color="green"> (AI suggested)</Text>}
       </Text>
     </Box>
   );
@@ -35,12 +38,14 @@ const TeamItem: React.FC<TeamItemProps> = ({ team, isSelected, isFocused }) => {
 
 export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository, onTeamsSelected, onCancel }) => {
   const [loading, setLoading] = useState(true);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamWithRepositories[]>([]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [error, setError] = useState<Error | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [permissionError, setPermissionError] = useState<Error | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   
   const { isRefreshing } = useTokenRefresh(() => {
     // Clear permission error and retry on token refresh
@@ -64,8 +69,29 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
 
   const loadTeams = async () => {
     try {
-      const teamList = await GitHubAPI.listTeams(account.login);
+      const teamList = await GitHubAPI.listTeamsWithRepositories(account.login);
       setTeams(teamList);
+      
+      // Get AI suggestions if available
+      if (await geminiService.isAvailable()) {
+        setLoadingAI(true);
+        try {
+          const suggestions = await geminiService.suggestTeams(repository.name, teamList);
+          if (suggestions && suggestions.length > 0) {
+            setAiSuggestions(suggestions);
+            // Auto-select AI suggested teams
+            const suggestedTeamIds = teamList
+              .filter(team => suggestions.includes(team.slug))
+              .map(team => team.id);
+            setSelectedTeamIds(new Set(suggestedTeamIds));
+            InteractionHistory.record('action', 'AI Team Suggestions Applied', suggestions.join(', '));
+          }
+        } catch (err) {
+          console.error('AI team suggestion error:', err);
+        } finally {
+          setLoadingAI(false);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load teams'));
     } finally {
@@ -136,13 +162,13 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
     }
   };
 
-  if (loading) {
+  if (loading || loadingAI) {
     return (
       <Box>
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> Loading teams...</Text>
+        <Text> {loading ? 'Loading teams...' : 'Getting AI suggestions...'}</Text>
       </Box>
     );
   }
@@ -204,6 +230,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
             team={team}
             isSelected={selectedTeamIds.has(team.id)}
             isFocused={index === focusedIndex}
+            isAISuggested={aiSuggestions.includes(team.slug)}
           />
         ))}
       </Box>

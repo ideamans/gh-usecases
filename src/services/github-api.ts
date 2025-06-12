@@ -41,6 +41,10 @@ export class GitHubAPI {
     return getGitHubAPI().listTeams(org);
   }
 
+  static async listTeamsWithRepositories(org: string): Promise<Array<Team & { repositories: Array<{ name: string; description?: string }> }>> {
+    return getGitHubAPI().listTeamsWithRepositories(org);
+  }
+
   static async addRepositoryToTeams(repositoryId: string, teamIds: string[]): Promise<void> {
     return getGitHubAPI().addRepositoryToTeams(repositoryId, teamIds);
   }
