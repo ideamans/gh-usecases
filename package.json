@@ -1,6 +1,6 @@
 {
   "name": "gh-usecases",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "bin": {
     "gh-usecases": "./dist/index.js"
