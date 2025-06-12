@@ -10,7 +10,7 @@ export class GitHubAPI {
   private async getGraphQLClient(): Promise<IGraphQLClient> {
     const token = await this.authTokenProvider.getToken();
     if (!token) {
-      throw new Error('GitHub認証トークンが見つかりません。~/.config/gh/hosts.yml に保存されているGitHub CLIの認証情報を確認してください。');
+      throw new Error('No GitHub authentication token found. Please check GitHub CLI authentication in ~/.config/gh/hosts.yml');
     }
     return this.graphqlClientFactory(token);
   }

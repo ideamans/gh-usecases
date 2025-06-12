@@ -2,7 +2,11 @@
 
 GitHubプロジェクト管理ワークフローを簡素化する対話型CLIツール。
 
+**Note:** The user interface is displayed in English.
+
 ## 機能
+
+> **注意:** ユーザーインターフェースは英語で表示されます。
 
 - 新規GitHubプロジェクトの作成
 - 既存プロジェクトのチームへの追加

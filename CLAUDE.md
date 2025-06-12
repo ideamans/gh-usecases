@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 gh-usecases is a TypeScript CLI application designed to simplify GitHub project management workflows. The project is currently in the design phase with implementation pending.
 
+**Important:** The user interface is displayed in English.
+
 ## Technology Stack
 
 - **Language**: TypeScript
@@ -68,7 +70,7 @@ gh-usecases/
 
 ### Key Components
 
-1. **Authentication**: Uses existing `gh` CLI authentication, reads from `~/.config/gh/hosts.yml`
+1. **Authentication**: Uses existing `gh` CLI authentication via `gh auth token` command (supports keyring and file storage)
 2. **Configuration**: Stores user preferences in `~/.gh-usecases.json`
 3. **API Integration**: Uses GitHub GraphQL API for efficient queries
 4. **Error Handling**: Comprehensive handling for auth, API, and user errors
@@ -90,3 +92,4 @@ gh-usecases/
 - Cache team lists for performance
 - Never log authentication tokens
 - Validate all user inputs
+- All UI messages and labels should be in English

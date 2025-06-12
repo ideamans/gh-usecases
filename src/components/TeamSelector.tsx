@@ -42,7 +42,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
     if (account.type === 'organization') {
       loadTeams();
     } else {
-      setError(new Error('個人アカウントにはチーム機能がありません'));
+      setError(new Error('Personal accounts do not have team features'));
       setLoading(false);
     }
   }, [account]);
@@ -60,7 +60,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
       );
       setSelectedTeamIds(defaultSet);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('チームの読み込みに失敗しました'));
+      setError(err instanceof Error ? err : new Error('Failed to load teams'));
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
   const handleSubmit = async () => {
     if (selectedTeamIds.size === 0) {
-      setError(new Error('少なくとも1つのチームを選択してください'));
+      setError(new Error('Please select at least one team'));
       return;
     }
 
@@ -115,7 +115,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
       onTeamsSelected(selectedTeams);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('プロジェクトをチームに追加できませんでした'));
+      setError(err instanceof Error ? err : new Error('Could not add project to teams'));
       setSubmitting(false);
     }
   };
@@ -126,7 +126,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> チームを読み込み中...</Text>
+        <Text> Loading teams...</Text>
       </Box>
     );
   }
@@ -141,7 +141,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
           </Text>
         ))}
         <Box marginTop={1}>
-          <Text dimColor>Ctrl+Cで終了</Text>
+          <Text dimColor>Press Ctrl+C to exit</Text>
         </Box>
       </Box>
     );
@@ -153,7 +153,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> プロジェクトをチームに追加中...</Text>
+        <Text> Adding project to teams...</Text>
       </Box>
     );
   }
@@ -161,7 +161,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>プロジェクトを追加するチームを選択してください:</Text>
+        <Text bold>Select teams to add the project to:</Text>
       </Box>
       
       {error && (
@@ -186,9 +186,9 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
       </Box>
 
       <Box marginTop={1} flexDirection="column">
-        <Text dimColor>スペース: 選択/選択解除</Text>
-        <Text dimColor>Enter: 選択を確定</Text>
-        <Text dimColor>Escape: キャンセル</Text>
+        <Text dimColor>Space: Select/Deselect</Text>
+        <Text dimColor>Enter: Confirm selection</Text>
+        <Text dimColor>Escape: Cancel</Text>
       </Box>
     </Box>
   );

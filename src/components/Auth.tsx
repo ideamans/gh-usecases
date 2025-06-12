@@ -51,34 +51,34 @@ export const Auth: React.FC<AuthProps> = ({ onAuthComplete, children }) => {
     
     return (
       <Box flexDirection="column" marginY={1}>
-        <Text color="red" bold>認証エラー</Text>
-        <Text color="red">エラー内容: {error}</Text>
+        <Text color="red" bold>Authentication Error</Text>
+        <Text color="red">Error: {error}</Text>
         <Box marginTop={1}>
-          <Text color="yellow">考えられる原因:</Text>
+          <Text color="yellow">Possible causes:</Text>
         </Box>
         {isTokenError && (
           <Box marginLeft={2}>
-            <Text>• GitHub CLIにログインしていません</Text>
-            <Text>• 認証トークンの有効期限が切れています</Text>
+            <Text>• Not logged in to GitHub CLI</Text>
+            <Text>• Authentication token has expired</Text>
           </Box>
         )}
         {isConfigError && (
           <Box marginLeft={2}>
-            <Text>• GitHub CLIの設定ファイルが見つかりません</Text>
-            <Text>• 設定ファイルの読み取り権限がありません</Text>
+            <Text>• GitHub CLI configuration file not found</Text>
+            <Text>• No read permissions for configuration file</Text>
           </Box>
         )}
         <Box marginTop={1}>
-          <Text color="green">解決方法:</Text>
+          <Text color="green">How to fix:</Text>
         </Box>
         <Box marginLeft={2}>
-          <Text>1. 以下のコマンドでGitHub CLIにログインしてください:</Text>
+          <Text>1. Log in to GitHub CLI with the following command:</Text>
           <Text>   <Text color="cyan" bold>gh auth login</Text></Text>
-          <Text>2. ログイン後、再度このコマンドを実行してください</Text>
+          <Text>2. After logging in, run this command again</Text>
         </Box>
         {isConfigError && (
           <Box marginTop={1} marginLeft={2}>
-            <Text color="dim">設定ファイルの場所: ~/.config/gh/hosts.yml</Text>
+            <Text color="dim">Configuration file location: ~/.config/gh/hosts.yml</Text>
           </Box>
         )}
       </Box>
@@ -88,24 +88,24 @@ export const Auth: React.FC<AuthProps> = ({ onAuthComplete, children }) => {
   if (!authState?.isAuthenticated) {
     return (
       <Box flexDirection="column" marginY={1}>
-        <Text color="yellow" bold>GitHub認証が必要です</Text>
+        <Text color="yellow" bold>GitHub Authentication Required</Text>
         <Box marginTop={1}>
-          <Text>このツールを使用するには、GitHub CLIでの認証が必要です。</Text>
+          <Text>You need to authenticate with GitHub CLI to use this tool.</Text>
         </Box>
         <Box marginTop={1}>
-          <Text color="green">セットアップ手順:</Text>
+          <Text color="green">Setup instructions:</Text>
         </Box>
         <Box marginLeft={2}>
-          <Text>1. 以下のコマンドを実行してGitHubにログインしてください:</Text>
+          <Text>1. Run the following command to log in to GitHub:</Text>
           <Text>   <Text color="cyan" bold>gh auth login</Text></Text>
-          <Text>2. プロンプトに従って認証方法を選択してください</Text>
-          <Text>   • GitHub.com を選択</Text>
-          <Text>   • HTTPS を推奨</Text>
-          <Text>   • ブラウザで認証 または トークンを貼り付け</Text>
-          <Text>3. 認証完了後、再度このコマンドを実行してください</Text>
+          <Text>2. Follow the prompts to select authentication method</Text>
+          <Text>   • Select GitHub.com</Text>
+          <Text>   • HTTPS is recommended</Text>
+          <Text>   • Authenticate via browser or paste token</Text>
+          <Text>3. After authentication is complete, run this command again</Text>
         </Box>
         <Box marginTop={1}>
-          <Text color="dim">詳細: https://cli.github.com/manual/gh_auth_login</Text>
+          <Text color="dim">More info: https://cli.github.com/manual/gh_auth_login</Text>
         </Box>
       </Box>
     );

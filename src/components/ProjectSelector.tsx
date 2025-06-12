@@ -81,7 +81,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
           </Text>
         ))}
         <Box marginTop={1}>
-          <Text dimColor>Ctrl+Cで終了、その他のキーで検索に戻る</Text>
+          <Text dimColor>Press Ctrl+C to exit, any other key to return to search</Text>
         </Box>
       </Box>
     );
@@ -96,11 +96,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
-          <Text bold>プロジェクトを選択してください:</Text>
+          <Text bold>Select a project:</Text>
         </Box>
         <SelectInput items={projectItems} onSelect={handleProjectSelect} />
         <Box marginTop={1}>
-          <Text dimColor>Escで検索に戻る</Text>
+          <Text dimColor>Press Esc to return to search</Text>
         </Box>
       </Box>
     );
@@ -109,14 +109,14 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>プロジェクトを検索:</Text>
+        <Text bold>Search for project:</Text>
       </Box>
       <Box>
         <TextInput
           value={searchQuery}
           onChange={setSearchQuery}
           onSubmit={handleSearchSubmit}
-          placeholder="検索キーワードを入力..."
+          placeholder="Enter search keywords..."
         />
         {searching && (
           <Box marginLeft={1}>
@@ -128,11 +128,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
       </Box>
       {searchQuery && !searching && projects.length === 0 && (
         <Box marginTop={1}>
-          <Text dimColor>プロジェクトが見つかりません</Text>
+          <Text dimColor>No projects found</Text>
         </Box>
       )}
       <Box marginTop={1}>
-        <Text dimColor>Ctrl+Cでキャンセル</Text>
+        <Text dimColor>Press Ctrl+C to cancel</Text>
       </Box>
     </Box>
   );

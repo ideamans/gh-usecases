@@ -10,16 +10,16 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Network/Connection errors
   if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('network')) {
     return {
-      title: 'ネットワーク接続エラー',
+      title: 'Network Connection Error',
       causes: [
-        'インターネット接続が切断されている',
-        'GitHubのサーバーに接続できない',
-        'ファイアウォールやプロキシの設定',
+        'Internet connection is disconnected',
+        'Cannot connect to GitHub servers',
+        'Firewall or proxy settings',
       ],
       solutions: [
-        'インターネット接続を確認してください',
-        'VPNを使用している場合は一時的に無効にしてみてください',
-        'しばらく待ってから再度お試しください',
+        'Check your internet connection',
+        'If using VPN, try disabling it temporarily',
+        'Wait a while and try again',
       ],
     };
   }
@@ -27,16 +27,16 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Authentication errors
   if (errorMessage.includes('authentication') || errorMessage.includes('token') || errorMessage.includes('401')) {
     return {
-      title: '認証エラー',
+      title: 'Authentication Error',
       causes: [
-        'GitHubの認証情報が無効または期限切れ',
-        'アクセストークンの権限が不足している',
-        'gh CLIにログインしていない',
+        'GitHub authentication credentials are invalid or expired',
+        'Insufficient access token permissions',
+        'Not logged in to gh CLI',
       ],
       solutions: [
-        '`gh auth login`を実行して再度ログインしてください',
-        '`gh auth status`で認証状態を確認してください',
-        'プロジェクト関連の権限(project, read:org)があることを確認してください',
+        'Run `gh auth login` to log in again',
+        'Check authentication status with `gh auth status`',
+        'Ensure you have project-related permissions (project, read:org)',
       ],
     };
   }
@@ -44,16 +44,16 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Permission/Authorization errors
   if (errorMessage.includes('permission') || errorMessage.includes('403') || errorMessage.includes('access')) {
     return {
-      title: 'アクセス権限エラー',
+      title: 'Access Permission Error',
       causes: [
-        '必要な権限が付与されていない',
-        '組織の設定でアクセスが制限されている',
-        'プロジェクトやチームへのアクセス権がない',
+        'Required permissions not granted',
+        'Access restricted by organization settings',
+        'No access to projects or teams',
       ],
       solutions: [
-        '組織の管理者に必要な権限を依頼してください',
-        'アクセストークンのスコープを確認してください',
-        '`gh auth refresh -s project,read:org`で権限を更新してください',
+        'Request necessary permissions from organization administrator',
+        'Check access token scopes',
+        'Update permissions with `gh auth refresh -s project,read:org`',
       ],
     };
   }
@@ -61,16 +61,16 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Not found errors
   if (errorMessage.includes('not found') || errorMessage.includes('404')) {
     return {
-      title: 'リソースが見つかりません',
+      title: 'Resource Not Found',
       causes: [
-        '指定されたプロジェクト、組織、チームが存在しない',
-        'リソースへのアクセス権限がない',
-        'URLやIDが間違っている',
+        'Specified project, organization, or team does not exist',
+        'No access permissions to resource',
+        'Incorrect URL or ID',
       ],
       solutions: [
-        '名前やIDが正しいか確認してください',
-        'アクセス権限があることを確認してください',
-        '組織名やプロジェクト名の大文字小文字を確認してください',
+        'Verify name or ID is correct',
+        'Confirm you have access permissions',
+        'Check capitalization of organization or project names',
       ],
     };
   }
@@ -78,15 +78,15 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Rate limit errors
   if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
     return {
-      title: 'API制限エラー',
+      title: 'API Rate Limit Error',
       causes: [
-        'GitHub APIのレート制限に達した',
-        '短時間に多くのリクエストを送信した',
+        'GitHub API rate limit reached',
+        'Too many requests sent in a short time',
       ],
       solutions: [
-        'しばらく待ってから再度お試しください（通常1時間後）',
-        '`gh api rate_limit`でレート制限の状態を確認してください',
-        '認証済みユーザーとして実行していることを確認してください',
+        'Wait a while and try again (usually 1 hour)',
+        'Check rate limit status with `gh api rate_limit`',
+        'Ensure you are running as an authenticated user',
       ],
     };
   }
@@ -94,63 +94,63 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // GraphQL errors
   if (errorMessage.includes('GraphQL') || errorMessage.includes('query')) {
     return {
-      title: 'APIリクエストエラー',
+      title: 'API Request Error',
       causes: [
-        'GitHub APIの仕様が変更された',
-        '無効なクエリパラメータ',
-        'サーバー側の一時的な問題',
+        'GitHub API specification changed',
+        'Invalid query parameters',
+        'Temporary server-side issue',
       ],
       solutions: [
-        'アプリケーションを最新バージョンに更新してください',
-        '入力内容に特殊文字が含まれていないか確認してください',
-        'しばらく待ってから再度お試しください',
+        'Update application to latest version',
+        'Check that input does not contain special characters',
+        'Wait a while and try again',
       ],
     };
   }
   
   // Project/Team specific errors  
-  if (errorMessage.includes('プロジェクトの作成に失敗')) {
+  if (errorMessage.includes('Failed to create project')) {
     return {
-      title: 'プロジェクト作成エラー',
+      title: 'Project Creation Error',
       causes: [
-        'プロジェクト名が既に使用されている',
-        '組織のプロジェクト作成権限がない',
-        '組織のプロジェクト数の上限に達した',
+        'Project name already in use',
+        'No permission to create projects in organization',
+        'Organization project limit reached',
       ],
       solutions: [
-        '別のプロジェクト名を試してください',
-        '組織の管理者に権限を確認してください',
-        '既存のプロジェクトを削除してから再度お試しください',
+        'Try a different project name',
+        'Check permissions with organization administrator',
+        'Delete existing projects and try again',
       ],
     };
   }
   
-  if (errorMessage.includes('チームの読み込みに失敗')) {
+  if (errorMessage.includes('Failed to load teams')) {
     return {
-      title: 'チーム読み込みエラー',
+      title: 'Team Loading Error',
       causes: [
-        '組織のチームへのアクセス権がない',
-        '組織が存在しないまたはアクセスできない',
+        'No access to organization teams',
+        'Organization does not exist or is inaccessible',
       ],
       solutions: [
-        '組織のメンバーであることを確認してください',
-        '組織名が正しいか確認してください',
-        '`gh auth refresh -s read:org`で権限を更新してください',
+        'Confirm you are a member of the organization',
+        'Verify organization name is correct',
+        'Update permissions with `gh auth refresh -s read:org`',
       ],
     };
   }
   
-  if (errorMessage.includes('プロジェクトをチームに追加できません')) {
+  if (errorMessage.includes('Could not add project to teams')) {
     return {
-      title: 'チーム追加エラー',
+      title: 'Team Addition Error',
       causes: [
-        'チームへのプロジェクト追加権限がない',
-        'プロジェクトが既にチームに追加されている',
+        'No permission to add projects to teams',
+        'Project already added to team',
       ],
       solutions: [
-        'チームの管理者に権限を依頼してください',
-        '選択したチームを確認してください',
-        '組織の管理者にプロジェクト設定を確認してください',
+        'Request permissions from team administrator',
+        'Verify selected teams',
+        'Check project settings with organization administrator',
       ],
     };
   }
@@ -158,72 +158,72 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
   // Validation errors
   if (errorMessage.includes('required') || errorMessage.includes('invalid') || errorMessage.includes('validation')) {
     return {
-      title: '入力エラー',
+      title: 'Input Error',
       causes: [
-        '必須項目が入力されていない',
-        '入力形式が正しくない',
-        '文字数制限を超えている',
+        'Required fields not filled',
+        'Invalid input format',
+        'Character limit exceeded',
       ],
       solutions: [
-        '必須項目をすべて入力してください',
-        '特殊文字や絵文字を避けてください',
-        'プロジェクト名は255文字以内で入力してください',
+        'Fill in all required fields',
+        'Avoid special characters or emojis',
+        'Keep project name under 255 characters',
       ],
     };
   }
   
   // Project name required error
-  if (errorMessage.includes('プロジェクト名は必須です')) {
+  if (errorMessage.includes('Project name is required')) {
     return {
-      title: 'プロジェクト名が入力されていません',
+      title: 'Project Name Not Entered',
       causes: [
-        'プロジェクト名が空欄です',
+        'Project name field is empty',
       ],
       solutions: [
-        'プロジェクト名を入力してEnterを押してください',
-        '英数字、ハイフン、アンダースコアが使用できます',
+        'Enter a project name and press Enter',
+        'You can use alphanumeric characters, hyphens, and underscores',
       ],
     };
   }
   
   // Team selection specific errors
-  if (errorMessage.includes('at least one team') || errorMessage.includes('少なくとも1つのチームを選択')) {
+  if (errorMessage.includes('at least one team') || errorMessage.includes('Please select at least one team')) {
     return {
-      title: 'チーム選択エラー',
+      title: 'Team Selection Error',
       causes: [
-        'チームが選択されていない',
+        'No teams selected',
       ],
       solutions: [
-        'スペースキーで1つ以上のチームを選択してください',
-        '選択後、Enterキーで確定してください',
+        'Select one or more teams using the space key',
+        'Press Enter to confirm selection',
       ],
     };
   }
   
   // Personal account team error
-  if (errorMessage.includes('Personal accounts cannot have teams') || errorMessage.includes('個人アカウントにはチーム機能がありません')) {
+  if (errorMessage.includes('Personal accounts cannot have teams') || errorMessage.includes('Personal accounts do not have team features')) {
     return {
-      title: 'アカウントタイプエラー',
+      title: 'Account Type Error',
       causes: [
-        '個人アカウントにはチーム機能がありません',
+        'Personal accounts do not have team features',
       ],
       solutions: [
-        '組織アカウントを選択してください',
-        '個人プロジェクトの場合はチーム追加をスキップしてください',
+        'Select an organization account',
+        'Skip team addition for personal projects',
       ],
     };
   }
   
   // Default error
   return {
-    title: 'エラーが発生しました',
+    title: 'An Error Occurred',
     causes: [
-      '予期しないエラーが発生しました',
+      'An unexpected error occurred',
     ],
     solutions: [
-      'エラーメッセージの詳細を確認してください',
-      '問題が続く場合は、GitHubのステータスページを確認してください',
-      'アプリケーションを再起動してみてください',
+      'Check error message details',
+      'If problem persists, check GitHub status page',
+      'Try restarting the application',
     ],
   };
 }
@@ -236,7 +236,7 @@ export function formatErrorDisplay(error: Error | string): string[] {
   lines.push('');
   
   if (info.causes.length > 0) {
-    lines.push('考えられる原因:');
+    lines.push('Possible causes:');
     info.causes.forEach(cause => {
       lines.push(`  • ${cause}`);
     });
@@ -244,7 +244,7 @@ export function formatErrorDisplay(error: Error | string): string[] {
   }
   
   if (info.solutions.length > 0) {
-    lines.push('解決方法:');
+    lines.push('How to fix:');
     info.solutions.forEach((solution, index) => {
       lines.push(`  ${index + 1}. ${solution}`);
     });
@@ -254,7 +254,7 @@ export function formatErrorDisplay(error: Error | string): string[] {
   const originalMessage = typeof error === 'string' ? error : error.message;
   if (originalMessage) {
     lines.push('');
-    lines.push(`詳細: ${originalMessage}`);
+    lines.push(`Details: ${originalMessage}`);
   }
   
   return lines;

@@ -30,30 +30,41 @@ export class AuthService {
 
   async getToken(): Promise<string | undefined> {
     try {
-      const configPath = path.join(
-        this.environment.homedir(),
-        '.config',
-        'gh',
-        'hosts.yml'
-      );
+      // Use GitHub CLI's `gh auth token` command to get the token
+      // This works with keyring, file, or any other storage method
+      const { stdout } = await this.commandExecutor.exec('gh auth token');
+      const token = stdout.trim();
       
-      if (await this.fileSystem.pathExists(configPath)) {
-        const configContent = await this.fileSystem.readFile(configPath, 'utf-8');
-        const tokenMatch = configContent.match(/oauth_token:\s*(.+)/);
-        if (tokenMatch) {
-          return tokenMatch[1].trim();
-        } else {
-          console.error('認証トークンが設定ファイル内に見つかりません');
-          console.error('ファイルパス:', configPath);
-        }
+      if (token && token.startsWith('gho_')) {
+        return token;
       } else {
-        console.error('GitHub CLIの設定ファイルが存在しません');
-        console.error('期待されるファイルパス:', configPath);
-        console.error('解決方法: gh auth login コマンドを実行してGitHubにログインしてください');
+        console.error('Could not retrieve valid token from GitHub CLI');
+        console.error('Retrieved token:', token ? '(invalid format)' : '(empty)');
       }
     } catch (error) {
-      console.error('認証設定ファイルの読み込みエラー:', error);
-      console.error('期待されるファイルパス:', configPath);
+      console.error('GitHub CLI token retrieval error:', error);
+      console.error('Solution: Run `gh auth login` to authenticate with GitHub');
+      
+      // Fallback: Try the traditional file-based method
+      try {
+        const configPath = path.join(
+          this.environment.homedir(),
+          '.config',
+          'gh',
+          'hosts.yml'
+        );
+        
+        if (await this.fileSystem.pathExists(configPath)) {
+          const configContent = await this.fileSystem.readFile(configPath, 'utf-8');
+          const tokenMatch = configContent.match(/oauth_token:\s*(.+)/);
+          if (tokenMatch) {
+            console.log('Fallback: Retrieved token from hosts.yml file');
+            return tokenMatch[1].trim();
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
     }
     return undefined;
   }
@@ -87,7 +98,7 @@ export class AuthService {
     const authState = await this.checkAuthStatus();
     
     if (!authState.isAuthenticated) {
-      throw new Error('認証されていません。まず `gh auth login` コマンドを実行してGitHubにログインしてください。');
+      throw new Error('Not authenticated. Please run `gh auth login` first to authenticate with GitHub.');
     }
 
     const missingScopes = requiredScopes.filter(

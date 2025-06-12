@@ -12,7 +12,7 @@ interface AccountSelectorProps {
 
 export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelected }) => {
   const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<Array<{ label: string; value: Config['selectedAccount'] }>>([]);
+  const [accounts, setAccounts] = useState<Array<{ label: string; value: Config['selectedAccount']; key: string }>>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,18 +32,20 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
       const accountOptions = [
         {
           label: `Personal (${user.login})`,
-          value: { type: 'personal' as const, login: user.login }
+          value: { type: 'personal' as const, login: user.login },
+          key: `personal-${user.login}`
         },
         ...user.organizations.map(org => ({
           label: `Organization (${org})`,
-          value: { type: 'organization' as const, login: org }
+          value: { type: 'organization' as const, login: org },
+          key: `org-${org}`
         }))
       ];
 
       setAccounts(accountOptions);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load accounts';
-      console.error('アカウント読み込みエラー:', errorMessage);
+      console.error('Account loading error:', errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -56,7 +58,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
       onAccountSelected(item.value);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save selection';
-      console.error('アカウント選択保存エラー:', errorMessage);
+      console.error('Account selection save error:', errorMessage);
       setError(errorMessage);
     }
   };
@@ -78,43 +80,43 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({ onAccountSelec
     
     return (
       <Box flexDirection="column" marginY={1}>
-        <Text color="red" bold>アカウント読み込みエラー</Text>
-        <Text color="red">エラー内容: {error}</Text>
+        <Text color="red" bold>Account Loading Error</Text>
+        <Text color="red">Error: {error}</Text>
         <Box marginTop={1}>
-          <Text color="yellow">考えられる原因:</Text>
+          <Text color="yellow">Possible causes:</Text>
         </Box>
         {isNetworkError && (
           <Box marginLeft={2}>
-            <Text>• ネットワーク接続に問題があります</Text>
-            <Text>• GitHub APIに接続できません</Text>
+            <Text>• Network connection issues</Text>
+            <Text>• Cannot connect to GitHub API</Text>
           </Box>
         )}
         {isPermissionError && (
           <Box marginLeft={2}>
-            <Text>• 必要な権限が不足しています</Text>
-            <Text>• 組織情報へのアクセス権限がありません</Text>
+            <Text>• Insufficient permissions</Text>
+            <Text>• No access to organization information</Text>
           </Box>
         )}
         {!isNetworkError && !isPermissionError && (
           <Box marginLeft={2}>
-            <Text>• GitHubアカウントの設定に問題があります</Text>
-            <Text>• APIレート制限に達している可能性があります</Text>
+            <Text>• GitHub account configuration issues</Text>
+            <Text>• API rate limit may have been reached</Text>
           </Box>
         )}
         <Box marginTop={1}>
-          <Text color="green">解決方法:</Text>
+          <Text color="green">How to fix:</Text>
         </Box>
         <Box marginLeft={2}>
-          <Text>1. インターネット接続を確認してください</Text>
-          <Text>2. 以下のコマンドで認証状態を確認してください:</Text>
+          <Text>1. Check your internet connection</Text>
+          <Text>2. Verify authentication status with the following command:</Text>
           <Text>   <Text color="cyan" bold>gh auth status</Text></Text>
           {isPermissionError && (
             <>
-              <Text>3. 必要な権限でログインし直してください:</Text>
+              <Text>3. Re-login with required permissions:</Text>
               <Text>   <Text color="cyan" bold>gh auth login --scopes read:org</Text></Text>
             </>
           )}
-          <Text>{isPermissionError ? '4' : '3'}. 問題が続く場合は、しばらく待ってから再度お試しください</Text>
+          <Text>{isPermissionError ? '4' : '3'}. If the problem persists, please wait a while and try again</Text>
         </Box>
       </Box>
     );

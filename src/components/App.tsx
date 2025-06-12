@@ -71,7 +71,6 @@ export const App: React.FC = () => {
         <ProjectCreator
           account={appState.selectedAccount}
           onProjectCreated={handleProjectCreated}
-          onCancel={handleCancel}
         />
       );
     }
