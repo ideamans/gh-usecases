@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-gh-usecases is a TypeScript CLI application designed to simplify GitHub project management workflows. The project is currently in the design phase with implementation pending.
+gh-usecases is a TypeScript CLI application designed to simplify GitHub repository management workflows. The application allows users to create repositories, add them to teams, and manage organization settings.
 
 **Important:** The user interface is displayed in English.
 
@@ -49,8 +49,8 @@ gh-usecases/
 │   │   ├── Auth.tsx           # Authentication checks
 │   │   ├── AccountSelector.tsx # Account selection (personal/org)
 │   │   ├── UseCaseSelector.tsx # Main menu
-│   │   ├── ProjectCreator.tsx  # Project creation form
-│   │   ├── ProjectSelector.tsx # Project search/selection
+│   │   ├── RepositoryCreator.tsx  # Repository creation form
+│   │   ├── RepositorySelector.tsx # Repository search/selection
 │   │   └── TeamSelector.tsx    # Multi-select team interface
 │   ├── services/              # Business logic
 │   │   ├── auth.ts           # GitHub authentication handling
@@ -78,9 +78,9 @@ gh-usecases/
 
 ### Main User Flows
 
-1. **Create Project**: Name, description, visibility settings
-2. **Add to Teams**: Search existing projects, select multiple teams
-3. **Combined Flow**: Create project and immediately add to teams
+1. **Create Repository**: Name, description, visibility settings
+2. **Add to Teams**: Search existing repositories, select multiple teams
+3. **Combined Flow**: Create repository and immediately add to teams
 
 ## Implementation Notes
 

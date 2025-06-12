@@ -1,4 +1,4 @@
-import { Project, Team, CreateProjectInput } from '../types/index.js';
+import { Repository, Team, CreateRepositoryInput } from '../types/index.js';
 import { IGraphQLClient, IAuthTokenProvider } from '../interfaces/index.js';
 
 export class GitHubAPI {
@@ -44,105 +44,107 @@ export class GitHubAPI {
     };
   }
 
-  async searchProjects(
+  async searchRepositories(
     query: string,
     owner: string,
     first: number = 10
-  ): Promise<Project[]> {
+  ): Promise<Repository[]> {
     const graphqlClient = await this.getGraphQLClient();
     
-    const searchQuery = `user:${owner} ${query}`;
+    const searchQuery = `user:${owner} ${query} in:name`;
     
     const { search } = await graphqlClient.request<{
       search: {
         nodes: Array<{
           id: string;
-          title: string;
-          shortDescription: string | null;
-          public: boolean;
+          name: string;
+          description: string | null;
+          isPrivate: boolean;
+          owner: {
+            login: string;
+          };
         }>;
       };
     }>(`
-      query SearchProjects($query: String!, $first: Int!) {
-        search(query: $query, type: ISSUE, first: $first) {
+      query SearchRepositories($searchQuery: String!, $first: Int!) {
+        search(query: $searchQuery, type: REPOSITORY, first: $first) {
           nodes {
-            ... on ProjectV2 {
+            ... on Repository {
               id
-              title
-              shortDescription
-              public
+              name
+              description
+              isPrivate
+              owner {
+                login
+              }
             }
           }
         }
       }
     `, {
-      query: searchQuery,
+      searchQuery,
       first,
     });
 
     return search.nodes.map(node => ({
       id: node.id,
-      name: node.title,
-      description: node.shortDescription || '',
-      visibility: node.public ? 'PUBLIC' : 'PRIVATE',
+      name: node.name,
+      description: node.description || '',
+      visibility: node.isPrivate ? 'PRIVATE' : 'PUBLIC',
+      owner: node.owner,
     }));
   }
 
-  async createProject(input: CreateProjectInput): Promise<Project> {
+  async createRepository(input: CreateRepositoryInput): Promise<Repository> {
     const graphqlClient = await this.getGraphQLClient();
     
-    // First create the project with just title and owner
-    const { createProjectV2 } = await graphqlClient.request<{
-      createProjectV2: {
-        projectV2: {
+    // For organization repositories, we need to get the organization ID
+    let ownerId: string | undefined;
+    if (input.owner) {
+      ownerId = await this.getOwnerId(input.owner, 'organization');
+    }
+    
+    const { createRepository } = await graphqlClient.request<{
+      createRepository: {
+        repository: {
           id: string;
-          title: string;
+          name: string;
+          description: string | null;
+          isPrivate: boolean;
+          owner: {
+            login: string;
+          };
         };
       };
     }>(`
-      mutation CreateProject($input: CreateProjectV2Input!) {
-        createProjectV2(input: $input) {
-          projectV2 {
+      mutation CreateRepository($input: CreateRepositoryInput!) {
+        createRepository(input: $input) {
+          repository {
             id
-            title
+            name
+            description
+            isPrivate
+            owner {
+              login
+            }
           }
         }
       }
     `, {
       input: {
-        ownerId: input.ownerId,
-        title: input.title,
+        name: input.name,
+        description: input.description || null,
+        visibility: input.visibility,
+        ...(ownerId && { ownerId }),
       },
     });
 
-    const projectId = createProjectV2.projectV2.id;
-    
-    // Update project with description and visibility
-    if (input.description !== undefined || input.visibility !== undefined) {
-      await graphqlClient.request(`
-        mutation UpdateProject($projectId: ID!, $shortDescription: String, $public: Boolean) {
-          updateProjectV2(input: {
-            projectId: $projectId,
-            shortDescription: $shortDescription,
-            public: $public
-          }) {
-            projectV2 {
-              id
-            }
-          }
-        }
-      `, {
-        projectId,
-        shortDescription: input.description || null,
-        public: input.visibility === 'PUBLIC',
-      });
-    }
-    
     return {
-      id: projectId,
-      name: createProjectV2.projectV2.title,
-      description: input.description || '',
-      visibility: input.visibility || 'PRIVATE',
+      id: createRepository.repository.id,
+      name: createRepository.repository.name,
+      description: createRepository.repository.description || '',
+      visibility: createRepository.repository.isPrivate ? 'PRIVATE' : 'PUBLIC',
+      owner: createRepository.repository.owner,
     };
   }
 
@@ -202,20 +204,24 @@ export class GitHubAPI {
     return organization.teams.nodes;
   }
 
-  async addProjectToTeams(projectId: string, teamIds: string[]): Promise<void> {
+  async addRepositoryToTeams(repositoryId: string, teamIds: string[]): Promise<void> {
     const graphqlClient = await this.getGraphQLClient();
     
-    for (const teamId of teamIds) {
-      await graphqlClient.request(`
-        mutation LinkProjectToTeam($projectId: ID!, $teamId: ID!) {
-          linkProjectV2ToTeam(input: { projectId: $projectId, teamId: $teamId }) {
-            clientMutationId
-          }
+    // Use updateTeamsRepository mutation to add repository to multiple teams
+    await graphqlClient.request(`
+      mutation AddRepositoryToTeams($repositoryId: ID!, $teamIds: [ID!]!, $permission: RepositoryPermission!) {
+        updateTeamsRepository(input: {
+          repositoryId: $repositoryId,
+          teamIds: $teamIds,
+          permission: $permission
+        }) {
+          clientMutationId
         }
-      `, {
-        projectId,
-        teamId,
-      });
-    }
+      }
+    `, {
+      repositoryId,
+      teamIds,
+      permission: 'WRITE', // Default permission
+    });
   }
 }

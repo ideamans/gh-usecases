@@ -8,11 +8,14 @@ export interface Config {
   };
 }
 
-export interface Project {
+export interface Repository {
   id: string;
   name: string;
   description?: string;
   visibility: 'PRIVATE' | 'PUBLIC';
+  owner: {
+    login: string;
+  };
 }
 
 export interface Team {
@@ -27,11 +30,11 @@ export interface AuthState {
   permissions: string[];
 }
 
-export interface CreateProjectInput {
-  ownerId: string;
-  title: string;
+export interface CreateRepositoryInput {
+  name: string;
   description?: string;
   visibility: 'PRIVATE' | 'PUBLIC';
+  owner?: string; // For organization repos
 }
 
 export type UseCase = 'create' | 'add-to-teams' | 'create-and-add';
@@ -40,5 +43,5 @@ export interface AppState {
   authState: AuthState | null;
   selectedAccount: Config['selectedAccount'] | null;
   currentUseCase: UseCase | null;
-  createdProject: Project | null;
+  createdRepository: Repository | null;
 }

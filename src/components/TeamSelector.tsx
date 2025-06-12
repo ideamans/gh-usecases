@@ -3,13 +3,13 @@ import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { ConfigService } from '../services/config.js';
-import { Config, Team, Project } from '../types/index.js';
+import { Config, Team, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
 
 interface TeamSelectorProps {
   account: Config['selectedAccount'];
-  project: Project;
+  repository: Repository;
   onTeamsSelected: (teams: Team[]) => void;
   onCancel: () => void;
 }
@@ -31,7 +31,7 @@ const TeamItem: React.FC<TeamItemProps> = ({ team, isSelected, isFocused }) => {
   );
 };
 
-export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, onTeamsSelected, onCancel }) => {
+export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository, onTeamsSelected, onCancel }) => {
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
@@ -111,8 +111,8 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
       // Record the final team selection
       InteractionHistory.record('selection', 'Final Team Selection', selectedTeams.map(t => t.name).join(', '));
       
-      await GitHubAPI.addProjectToTeams(
-        project.id,
+      await GitHubAPI.addRepositoryToTeams(
+        repository.id,
         Array.from(selectedTeamIds)
       );
 
@@ -121,7 +121,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, project, on
 
       onTeamsSelected(selectedTeams);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Could not add project to teams'));
+      setError(err instanceof Error ? err : new Error('Could not add repository to teams'));
       setSubmitting(false);
     }
   };

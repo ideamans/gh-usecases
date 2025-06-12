@@ -49,7 +49,7 @@ export function getErrorInfo(error: Error | string, includeHistory: boolean = tr
       [
         'Run `gh auth login` to log in again',
         'Check authentication status with `gh auth status`',
-        'Ensure you have project-related permissions (project, read:org)',
+        'Ensure you have repository and team permissions (repo, admin:org)',
       ],
       includeHistory
     );
@@ -62,12 +62,12 @@ export function getErrorInfo(error: Error | string, includeHistory: boolean = tr
       [
         'Required permissions not granted',
         'Access restricted by organization settings',
-        'No access to projects or teams',
+        'No access to repositories or teams',
       ],
       [
         'Request necessary permissions from organization administrator',
         'Check access token scopes',
-        'Update permissions with `gh auth refresh -s project,read:org`',
+        'Update permissions with `gh auth refresh -s repo,admin:org`',
       ],
       includeHistory
     );
@@ -126,19 +126,19 @@ export function getErrorInfo(error: Error | string, includeHistory: boolean = tr
     );
   }
   
-  // Project/Team specific errors  
-  if (errorMessage.includes('Failed to create project')) {
+  // Repository/Team specific errors  
+  if (errorMessage.includes('Failed to create repository')) {
     return createErrorInfo(
-      'Project Creation Error',
+      'Repository Creation Error',
       [
-        'Project name already in use',
-        'No permission to create projects in organization',
-        'Organization project limit reached',
+        'Repository name already in use',
+        'No permission to create repositories in organization',
+        'Organization repository limit reached',
       ],
       [
-        'Try a different project name',
+        'Try a different repository name',
         'Check permissions with organization administrator',
-        'Delete existing projects and try again',
+        'Delete existing repositories and try again',
       ],
       includeHistory
     );
@@ -154,23 +154,25 @@ export function getErrorInfo(error: Error | string, includeHistory: boolean = tr
       [
         'Confirm you are a member of the organization',
         'Verify organization name is correct',
-        'Update permissions with `gh auth refresh -s read:org`',
+        'Update permissions with `gh auth refresh -s read:org,write:org`',
       ],
       includeHistory
     );
   }
   
-  if (errorMessage.includes('Could not add project to teams')) {
+  if (errorMessage.includes('Could not add repository to teams')) {
     return createErrorInfo(
       'Team Addition Error',
       [
-        'No permission to add projects to teams',
-        'Project already added to team',
+        'No permission to add repositories to teams',
+        'Repository already added to team',
+        'Insufficient team or repository permissions',
       ],
       [
         'Request permissions from team administrator',
         'Verify selected teams',
-        'Check project settings with organization administrator',
+        'Update permissions with `gh auth refresh -s repo,admin:org,write:org`',
+        'Check repository settings with organization administrator',
       ],
       includeHistory
     );
@@ -194,15 +196,15 @@ export function getErrorInfo(error: Error | string, includeHistory: boolean = tr
     );
   }
   
-  // Project name required error
-  if (errorMessage.includes('Project name is required')) {
+  // Repository name required error
+  if (errorMessage.includes('Repository name is required')) {
     return createErrorInfo(
-      'Project Name Not Entered',
+      'Repository Name Not Entered',
       [
-        'Project name field is empty',
+        'Repository name field is empty',
       ],
       [
-        'Enter a project name and press Enter',
+        'Enter a repository name and press Enter',
         'You can use alphanumeric characters, hyphens, and underscores',
       ],
       includeHistory

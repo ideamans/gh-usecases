@@ -1,7 +1,7 @@
 import { GitHubAPI as GitHubAPIRefactored } from './github-api-refactored.js';
 import { createGraphQLClient } from './graphql-client-factory.js';
 import { AuthService } from './auth.js';
-import { Project, Team, CreateProjectInput } from '../types/index.js';
+import { Repository, Team, CreateRepositoryInput } from '../types/index.js';
 
 // Singleton instance for backward compatibility
 let githubAPIInstance: GitHubAPIRefactored | null = null;
@@ -21,16 +21,16 @@ export class GitHubAPI {
     return getGitHubAPI().getCurrentUser();
   }
 
-  static async searchProjects(
+  static async searchRepositories(
     query: string,
     owner: string,
     first: number = 10
-  ): Promise<Project[]> {
-    return getGitHubAPI().searchProjects(query, owner, first);
+  ): Promise<Repository[]> {
+    return getGitHubAPI().searchRepositories(query, owner, first);
   }
 
-  static async createProject(input: CreateProjectInput): Promise<Project> {
-    return getGitHubAPI().createProject(input);
+  static async createRepository(input: CreateRepositoryInput): Promise<Repository> {
+    return getGitHubAPI().createRepository(input);
   }
 
   static async getOwnerId(login: string, type: 'user' | 'organization'): Promise<string> {
@@ -41,7 +41,7 @@ export class GitHubAPI {
     return getGitHubAPI().listTeams(org);
   }
 
-  static async addProjectToTeams(projectId: string, teamIds: string[]): Promise<void> {
-    return getGitHubAPI().addProjectToTeams(projectId, teamIds);
+  static async addRepositoryToTeams(repositoryId: string, teamIds: string[]): Promise<void> {
+    return getGitHubAPI().addRepositoryToTeams(repositoryId, teamIds);
   }
 }

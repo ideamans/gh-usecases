@@ -3,10 +3,10 @@ import { Box, Text, useApp } from 'ink';
 import { Auth } from './Auth.js';
 import { AccountSelector } from './AccountSelector.js';
 import { UseCaseSelector } from './UseCaseSelector.js';
-import { ProjectCreator } from './ProjectCreator.js';
-import { ProjectSelector } from './ProjectSelector.js';
+import { RepositoryCreator } from './RepositoryCreator.js';
+import { RepositorySelector } from './RepositorySelector.js';
 import { TeamSelector } from './TeamSelector.js';
-import { AppState, AuthState, Config, Project, Team, UseCase } from '../types/index.js';
+import { AppState, AuthState, Config, Repository, Team, UseCase } from '../types/index.js';
 
 export const App: React.FC = () => {
   const { exit } = useApp();
@@ -14,7 +14,7 @@ export const App: React.FC = () => {
     authState: null,
     selectedAccount: null,
     currentUseCase: null,
-    createdProject: null,
+    createdRepository: null,
   });
 
   const handleAuthComplete = (authState: AuthState) => {
@@ -29,23 +29,23 @@ export const App: React.FC = () => {
     setAppState(prev => ({ ...prev, currentUseCase: useCase }));
   };
 
-  const handleProjectCreated = (project: Project) => {
-    setAppState(prev => ({ ...prev, createdProject: project }));
+  const handleRepositoryCreated = (repository: Repository) => {
+    setAppState(prev => ({ ...prev, createdRepository: repository }));
     
     if (appState.currentUseCase === 'create') {
       exit();
-      console.log(`\n✅ Project "${project.name}" created successfully!`);
+      console.log(`\n✅ Repository "${repository.name}" created successfully!`);
     }
   };
 
-  const handleProjectSelected = (project: Project) => {
-    setAppState(prev => ({ ...prev, createdProject: project }));
+  const handleRepositorySelected = (repository: Repository) => {
+    setAppState(prev => ({ ...prev, createdRepository: repository }));
   };
 
   const handleTeamsSelected = (teams: Team[]) => {
     const teamNames = teams.map(t => t.name).join(', ');
     exit();
-    console.log(`\n✅ Project "${appState.createdProject?.name}" added to teams: ${teamNames}`);
+    console.log(`\n✅ Repository "${appState.createdRepository?.name}" added to teams: ${teamNames}`);
   };
 
   const handleCancel = () => {
@@ -66,32 +66,32 @@ export const App: React.FC = () => {
     }
 
     if (appState.currentUseCase === 'create' || 
-        (appState.currentUseCase === 'create-and-add' && !appState.createdProject)) {
+        (appState.currentUseCase === 'create-and-add' && !appState.createdRepository)) {
       return (
-        <ProjectCreator
+        <RepositoryCreator
           account={appState.selectedAccount}
-          onProjectCreated={handleProjectCreated}
+          onRepositoryCreated={handleRepositoryCreated}
         />
       );
     }
 
-    if (appState.currentUseCase === 'add-to-teams' && !appState.createdProject) {
+    if (appState.currentUseCase === 'add-to-teams' && !appState.createdRepository) {
       return (
-        <ProjectSelector
+        <RepositorySelector
           account={appState.selectedAccount}
-          onProjectSelected={handleProjectSelected}
+          onRepositorySelected={handleRepositorySelected}
           onCancel={handleCancel}
         />
       );
     }
 
     if ((appState.currentUseCase === 'add-to-teams' || appState.currentUseCase === 'create-and-add') 
-        && appState.createdProject
+        && appState.createdRepository
         && appState.selectedAccount.type === 'organization') {
       return (
         <TeamSelector
           account={appState.selectedAccount}
-          project={appState.createdProject}
+          repository={appState.createdRepository}
           onTeamsSelected={handleTeamsSelected}
           onCancel={handleCancel}
         />
@@ -100,7 +100,7 @@ export const App: React.FC = () => {
 
     if (appState.selectedAccount.type === 'personal' && 
         (appState.currentUseCase === 'add-to-teams' || 
-         (appState.currentUseCase === 'create-and-add' && appState.createdProject))) {
+         (appState.currentUseCase === 'create-and-add' && appState.createdRepository))) {
       exit();
       console.log('\n⚠️  Personal accounts cannot have teams.');
       return null;

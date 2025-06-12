@@ -4,20 +4,20 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
-import { Config, Project } from '../types/index.js';
+import { Config, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
 
-interface ProjectSelectorProps {
+interface RepositorySelectorProps {
   account: Config['selectedAccount'];
-  onProjectSelected: (project: Project) => void;
+  onRepositorySelected: (repository: Repository) => void;
   onCancel: () => void;
 }
 
-export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onProjectSelected, onCancel }) => {
+export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account, onRepositorySelected, onCancel }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [repositories, setRepositories] = useState<Repository[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
@@ -29,11 +29,11 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
 
     if (searchQuery.trim()) {
       const timer = setTimeout(() => {
-        searchProjects();
+        searchRepositories();
       }, 500);
       setSearchTimer(timer);
     } else {
-      setProjects([]);
+      setRepositories([]);
       setShowResults(false);
     }
 
@@ -44,39 +44,52 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
     };
   }, [searchQuery]);
 
-  const searchProjects = async () => {
+  const searchRepositories = async () => {
     setSearching(true);
     setError(null);
     
     // Record search query
     if (searchQuery.trim()) {
-      InteractionHistory.record('input', 'Project Search', searchQuery.trim());
+      InteractionHistory.record('input', 'Repository Search', searchQuery.trim());
     }
     
     try {
-      const results = await GitHubAPI.searchProjects(searchQuery, account.login, 20);
-      setProjects(results);
+      const results = await GitHubAPI.searchRepositories(searchQuery, account.login, 20);
+      // Remove duplicates based on repository ID
+      const uniqueResults = results.filter((repo, index, self) => 
+        index === self.findIndex(r => r.id === repo.id)
+      );
+      setRepositories(uniqueResults);
       setShowResults(true);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to search projects'));
-      setProjects([]);
+      setError(err instanceof Error ? err : new Error('Failed to search repositories'));
+      setRepositories([]);
     } finally {
       setSearching(false);
     }
   };
 
   const handleSearchSubmit = () => {
-    if (projects.length === 1) {
-      InteractionHistory.record('selection', 'Project', projects[0].title);
-      onProjectSelected(projects[0]);
-    } else if (projects.length > 1) {
+    if (repositories.length === 1) {
+      InteractionHistory.record('selection', 'Repository', repositories[0].title);
+      onRepositorySelected(repositories[0]);
+    } else if (repositories.length > 1) {
       setShowResults(true);
     }
   };
 
-  const handleProjectSelect = (item: { value: Project }) => {
-    InteractionHistory.record('selection', 'Project', item.value.title);
-    onProjectSelected(item.value);
+  const handleRepositorySelect = (item: { value: Repository }) => {
+    InteractionHistory.record('selection', 'Repository', item.value.name);
+    onRepositorySelected(item.value);
+  };
+  
+  // Handle selection by index to avoid object comparison issues
+  const handleIndexSelect = (item: { value: number }) => {
+    const repository = repositories[item.value];
+    if (repository) {
+      InteractionHistory.record('selection', 'Repository', repository.name);
+      onRepositorySelected(repository);
+    }
   };
 
   if (error) {
@@ -95,18 +108,18 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
     );
   }
 
-  if (showResults && projects.length > 0 && searchQuery.trim()) {
-    const projectItems = projects.map(project => ({
-      label: `${project.name}${project.description ? ` - ${project.description}` : ''}`,
-      value: project,
+  if (showResults && repositories.length > 0 && searchQuery.trim()) {
+    const repositoryItems = repositories.map((repository, index) => ({
+      label: `${repository.name}${repository.description ? ` - ${repository.description}` : ''}`,
+      value: index, // Use index instead of object
     }));
 
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
-          <Text bold>Select a project:</Text>
+          <Text bold>Select a repository:</Text>
         </Box>
-        <SelectInput items={projectItems} onSelect={handleProjectSelect} />
+        <SelectInput items={repositoryItems} onSelect={handleIndexSelect} />
         <Box marginTop={1}>
           <Text dimColor>Press Esc to return to search</Text>
         </Box>
@@ -117,7 +130,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>Search for project:</Text>
+        <Text bold>Search for repository:</Text>
       </Box>
       <Box>
         <TextInput
@@ -134,9 +147,9 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({ account, onPro
           </Box>
         )}
       </Box>
-      {searchQuery && !searching && projects.length === 0 && (
+      {searchQuery && !searching && repositories.length === 0 && (
         <Box marginTop={1}>
-          <Text dimColor>No projects found</Text>
+          <Text dimColor>No repositories found</Text>
         </Box>
       )}
       <Box marginTop={1}>

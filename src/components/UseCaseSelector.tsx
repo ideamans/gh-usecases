@@ -10,15 +10,15 @@ interface UseCaseSelectorProps {
 
 const useCaseItems = [
   {
-    label: 'Create a new project',
+    label: 'Create a new repository',
     value: 'create' as UseCase,
   },
   {
-    label: 'Add existing project to teams',
+    label: 'Add existing repository to teams',
     value: 'add-to-teams' as UseCase,
   },
   {
-    label: 'Create project and add to teams',
+    label: 'Create repository and add to teams',
     value: 'create-and-add' as UseCase,
   },
 ];

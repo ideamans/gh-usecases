@@ -4,13 +4,13 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
-import { Config, Project } from '../types/index.js';
+import { Config, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
 
-interface ProjectCreatorProps {
+interface RepositoryCreatorProps {
   account: Config['selectedAccount'];
-  onProjectCreated: (project: Project) => void;
+  onRepositoryCreated: (repository: Repository) => void;
 }
 
 type Step = 'name' | 'description' | 'visibility' | 'creating';
@@ -20,7 +20,7 @@ const visibilityItems = [
   { label: 'Public', value: 'PUBLIC' as const },
 ];
 
-export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProjectCreated }) => {
+export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, onRepositoryCreated }) => {
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -28,10 +28,10 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
 
   const handleNameSubmit = () => {
     if (!name.trim()) {
-      setError(new Error('Project name is required'));
+      setError(new Error('Repository name is required'));
       return;
     }
-    InteractionHistory.record('input', 'Project Name', name.trim());
+    InteractionHistory.record('input', 'Repository Name', name.trim());
     setError(null);
     setStep('description');
   };
@@ -44,26 +44,21 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
   const handleVisibilitySelect = async (item: { value: 'PRIVATE' | 'PUBLIC' }) => {
     InteractionHistory.record('selection', 'Visibility', item.value === 'PRIVATE' ? 'Private' : 'Public');
     setStep('creating');
-    await createProject(item.value);
+    await createRepository(item.value);
   };
 
-  const createProject = async (selectedVisibility: 'PRIVATE' | 'PUBLIC') => {
+  const createRepository = async (selectedVisibility: 'PRIVATE' | 'PUBLIC') => {
     try {
-      const ownerId = await GitHubAPI.getOwnerId(
-        account.login,
-        account.type === 'personal' ? 'user' : 'organization'
-      );
-
-      const project = await GitHubAPI.createProject({
-        ownerId,
-        title: name,
+      const repository = await GitHubAPI.createRepository({
+        name,
         description: description || undefined,
         visibility: selectedVisibility,
+        owner: account.type === 'organization' ? account.login : undefined,
       });
 
-      onProjectCreated(project);
+      onRepositoryCreated(repository);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to create project'));
+      setError(err instanceof Error ? err : new Error('Failed to create repository'));
       setStep('name');
     }
   };
@@ -90,7 +85,7 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
         <Text color="blue">
           <Spinner type="dots" />
         </Text>
-        <Text> Creating project...</Text>
+        <Text> Creating repository...</Text>
       </Box>
     );
   }
@@ -100,13 +95,13 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       {step === 'name' && (
         <>
           <Box marginBottom={1}>
-            <Text bold>Enter project name:</Text>
+            <Text bold>Enter repository name:</Text>
           </Box>
           <TextInput
             value={name}
             onChange={setName}
             onSubmit={handleNameSubmit}
-            placeholder="e.g. My Project"
+            placeholder="e.g. my-repository"
           />
           <Box marginTop={1}>
             <Text dimColor>Press Enter to continue, Ctrl+C to cancel</Text>
@@ -117,13 +112,13 @@ export const ProjectCreator: React.FC<ProjectCreatorProps> = ({ account, onProje
       {step === 'description' && (
         <>
           <Box marginBottom={1}>
-            <Text bold>Enter project description (optional):</Text>
+            <Text bold>Enter repository description (optional):</Text>
           </Box>
           <TextInput
             value={description}
             onChange={setDescription}
             onSubmit={handleDescriptionSubmit}
-            placeholder="Project description..."
+            placeholder="Repository description..."
           />
           <Box marginTop={1}>
             <Text dimColor>Press Enter to continue</Text>

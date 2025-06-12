@@ -1,6 +1,6 @@
 # gh-usecases
 
-GitHubプロジェクト管理ワークフローを簡素化する対話型CLIツール。
+GitHubリポジトリ管理ワークフローを簡素化する対話型CLIツール。
 
 **Note:** The user interface is displayed in English.
 
@@ -8,9 +8,9 @@ GitHubプロジェクト管理ワークフローを簡素化する対話型CLI�
 
 > **注意:** ユーザーインターフェースは英語で表示されます。
 
-- 新規GitHubプロジェクトの作成
-- 既存プロジェクトのチームへの追加
-- プロジェクトの作成と同時にチームへの追加
+- 新規GitHubリポジトリの作成
+- 既存リポジトリのチームへの追加
+- リポジトリの作成と同時にチームへの追加
 - GitHub CLI (`gh`) 認証との統合
 - 個人アカウントと組織アカウントの切り替え
 - デフォルトチーム設定の保存
@@ -52,7 +52,7 @@ npx gh-usecases
 
 - Node.js 16以上
 - GitHub CLI (`gh`) がインストールされ、認証済みであること
-- 必要なGitHubスコープ: `project`, `admin:org`
+- 必要なGitHubスコープ: `repo`, `admin:org`, `write:org`
 
 ## 設定
 
