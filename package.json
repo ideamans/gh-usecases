@@ -1,7 +1,10 @@
 {
   "name": "gh-usecases",
-  "version": "1.0.0",
+  "version": "1.0.1-beta.1",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "bin": {
     "gh-usecases": "./dist/index.js"
   },
@@ -18,8 +21,8 @@
     "release:patch": "npm version patch && git push origin main --tags",
     "release:minor": "npm version minor && git push origin main --tags",
     "release:major": "npm version major && git push origin main --tags",
-    "prerelease:beta": "npm version prerelease --preid=beta && git push origin develop --tags",
-    "prerelease:alpha": "npm version prerelease --preid=alpha && git push origin develop --tags"
+    "prerelease:beta": "npm version prerelease --preid=beta && git push origin --follow-tags",
+    "prerelease:alpha": "npm version prerelease --preid=alpha && git push origin --follow-tags"
   },
   "license": "MIT",
   "dependencies": {
