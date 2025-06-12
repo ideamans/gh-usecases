@@ -36,7 +36,13 @@ jobs:
     
     - name: Update package.json version
       run: |
-        npm version ${{ steps.extract_version.outputs.version }} --no-git-tag-version
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        TAG_VERSION=${{ steps.extract_version.outputs.version }}
+        if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
+          npm version $TAG_VERSION --no-git-tag-version
+        else
+          echo "Version already matches tag version: $TAG_VERSION"
+        fi
     
     - name: Publish to NPM
       run: npm publish --access public
