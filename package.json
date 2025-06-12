@@ -1,6 +1,6 @@
 {
   "name": "gh-usecases",
-  "version": "1.0.0",
+  "version": "1.0.1-beta.0",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
