@@ -52,7 +52,7 @@ jobs:
       id: version
       run: |
         PRERELEASE_TYPE="${{ github.event.inputs.prerelease_type || 'beta' }}"
-        NEW_VERSION=$(npm version pre${PRERELEASE_TYPE} --no-git-tag-version)
+        NEW_VERSION=$(npm version prerelease --preid=${PRERELEASE_TYPE} --no-git-tag-version)
         echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         echo "tag=${NEW_VERSION}" >> $GITHUB_OUTPUT
     
