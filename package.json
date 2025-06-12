@@ -25,7 +25,7 @@
   "dependencies": {
     "@google/genai": "^1.4.0",
     "@octokit/graphql": "^7.0.2",
-    "commander": "^11.1.0",
+    "commander": "^14.0.0",
     "fs-extra": "^11.2.0",
     "ink": "^4.4.1",
     "ink-select-input": "^5.0.0",
