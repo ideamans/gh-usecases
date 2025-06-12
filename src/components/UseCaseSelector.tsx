@@ -23,6 +23,10 @@ const useCaseItems = [
     value: 'create-and-add' as UseCase,
   },
   {
+    label: 'Change GitHub Account',
+    value: 'change-account' as UseCase,
+  },
+  {
     label: 'Configure Gemini API Key',
     value: 'configure-gemini' as UseCase,
   },

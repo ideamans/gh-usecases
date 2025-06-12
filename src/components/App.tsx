@@ -74,6 +74,17 @@ export const App: React.FC = () => {
       );
     }
 
+    if (appState.currentUseCase === 'change-account') {
+      return (
+        <AccountSelector 
+          onAccountSelected={(account) => {
+            handleAccountSelected(account);
+            setAppState(prev => ({ ...prev, currentUseCase: null }));
+          }}
+        />
+      );
+    }
+
     if ((appState.currentUseCase === 'create' && !showInstructions) || 
         (appState.currentUseCase === 'create-and-add' && !appState.createdRepository && !showInstructions)) {
       return (

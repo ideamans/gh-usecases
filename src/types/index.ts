@@ -35,7 +35,7 @@ export interface CreateRepositoryInput {
   owner?: string; // For organization repos
 }
 
-export type UseCase = 'create' | 'add-to-teams' | 'create-and-add' | 'configure-gemini';
+export type UseCase = 'create' | 'add-to-teams' | 'create-and-add' | 'configure-gemini' | 'change-account';
 
 export interface AppState {
   authState: AuthState | null;
