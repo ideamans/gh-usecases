@@ -155,6 +155,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
       <Box marginTop={1}>
         <Text dimColor>Press Ctrl+C to cancel</Text>
       </Box>
+      <TokenRefreshHint />
     </Box>
   );
 };

@@ -31,12 +31,4 @@ export class ConfigService {
   static async setSelectedAccount(account: Config['selectedAccount']): Promise<void> {
     return getConfigService().setSelectedAccount(account);
   }
-
-  static async getDefaultTeams(org: string): Promise<string[]> {
-    return getConfigService().getDefaultTeams(org);
-  }
-
-  static async setDefaultTeams(org: string, teams: string[]): Promise<void> {
-    return getConfigService().setDefaultTeams(org, teams);
-  }
 }

@@ -13,7 +13,6 @@ GitHubリポジトリ管理ワークフローを簡素化する対話型CLIツ�
 - リポジトリの作成と同時にチームへの追加
 - GitHub CLI (`gh`) 認証との統合
 - 個人アカウントと組織アカウントの切り替え
-- デフォルトチーム設定の保存
 
 ## インストール
 
@@ -63,9 +62,6 @@ npx gh-usecases
   "selectedAccount": {
     "type": "organization",
     "login": "my-org"
-  },
-  "defaultTeams": {
-    "my-org": ["team-1", "team-2"]
   }
 }
 ```

@@ -7,6 +7,8 @@ import { GitHubAPI } from '../services/github-api.js';
 import { Config, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
+import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
+import { TokenRefreshHint } from './TokenRefreshHint.js';
 
 interface RepositoryCreatorProps {
   account: Config['selectedAccount'];
@@ -25,6 +27,16 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<Error | null>(null);
+  const [lastAttemptedVisibility, setLastAttemptedVisibility] = useState<'PRIVATE' | 'PUBLIC' | null>(null);
+  
+  const { isRefreshing } = useTokenRefresh(() => {
+    // Retry creation after token refresh if there was a permission error
+    if (error && lastAttemptedVisibility && 
+        (error.message.includes('permission') || error.message.includes('403'))) {
+      setError(null);
+      createRepository(lastAttemptedVisibility);
+    }
+  });
 
   const handleNameSubmit = () => {
     if (!name.trim()) {
@@ -43,6 +55,7 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
 
   const handleVisibilitySelect = async (item: { value: 'PRIVATE' | 'PUBLIC' }) => {
     InteractionHistory.record('selection', 'Visibility', item.value === 'PRIVATE' ? 'Private' : 'Public');
+    setLastAttemptedVisibility(item.value);
     setStep('creating');
     await createRepository(item.value);
   };
@@ -58,8 +71,15 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
 
       onRepositoryCreated(repository);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to create repository'));
-      setStep('name');
+      const error = err instanceof Error ? err : new Error('Failed to create repository');
+      setError(error);
+      
+      // For permission errors, stay on visibility step to allow retry
+      if (error.message.includes('permission') || error.message.includes('403')) {
+        setStep('visibility');
+      } else {
+        setStep('name');
+      }
     }
   };
 
@@ -72,9 +92,17 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
             {line}
           </Text>
         ))}
+        {(error.message.includes('permission') || error.message.includes('403')) && (
+          <Box marginTop={1} flexDirection="column">
+            <Text color="yellow">To fix permission issues:</Text>
+            <Text>1. Run: <Text color="cyan">gh auth refresh -s repo,admin:org</Text></Text>
+            <Text>2. Then press <Text color="green">Shift+Tab</Text> to refresh the token and retry</Text>
+          </Box>
+        )}
         <Box marginTop={1}>
           <Text dimColor>Press any key to continue...</Text>
         </Box>
+        <TokenRefreshHint />
       </Box>
     );
   }
@@ -106,6 +134,7 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
           <Box marginTop={1}>
             <Text dimColor>Press Enter to continue, Ctrl+C to cancel</Text>
           </Box>
+          <TokenRefreshHint />
         </>
       )}
 
@@ -123,6 +152,7 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
           <Box marginTop={1}>
             <Text dimColor>Press Enter to continue</Text>
           </Box>
+          <TokenRefreshHint />
         </>
       )}
 
@@ -132,6 +162,7 @@ export const RepositoryCreator: React.FC<RepositoryCreatorProps> = ({ account, o
             <Text bold>Select project visibility:</Text>
           </Box>
           <SelectInput items={visibilityItems} onSelect={handleVisibilitySelect} />
+          <TokenRefreshHint />
         </>
       )}
     </Box>

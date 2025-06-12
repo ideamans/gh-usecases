@@ -45,19 +45,4 @@ export class ConfigService {
     config.selectedAccount = account;
     await this.save(config);
   }
-
-  async getDefaultTeams(org: string): Promise<string[]> {
-    const config = await this.load();
-    return config?.defaultTeams?.[org] || [];
-  }
-
-  async setDefaultTeams(org: string, teams: string[]): Promise<void> {
-    const config = await this.load();
-    const updatedConfig: Config = config || { selectedAccount: null as any, defaultTeams: {} };
-    if (!updatedConfig.defaultTeams) {
-      updatedConfig.defaultTeams = {};
-    }
-    updatedConfig.defaultTeams[org] = teams;
-    await this.save(updatedConfig);
-  }
 }

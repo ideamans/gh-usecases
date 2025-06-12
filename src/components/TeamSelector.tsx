@@ -6,6 +6,8 @@ import { ConfigService } from '../services/config.js';
 import { Config, Team, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
+import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
+import { TokenRefreshHint } from './TokenRefreshHint.js';
 
 interface TeamSelectorProps {
   account: Config['selectedAccount'];
@@ -38,6 +40,18 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [error, setError] = useState<Error | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [permissionError, setPermissionError] = useState<Error | null>(null);
+  
+  const { isRefreshing } = useTokenRefresh(() => {
+    // Clear permission error and retry on token refresh
+    if (permissionError) {
+      setPermissionError(null);
+      setError(null);
+      if (selectedTeamIds.size > 0) {
+        handleSubmit();
+      }
+    }
+  });
 
   useEffect(() => {
     if (account.type === 'organization') {
@@ -52,14 +66,6 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
     try {
       const teamList = await GitHubAPI.listTeams(account.login);
       setTeams(teamList);
-      
-      const defaultTeams = await ConfigService.getDefaultTeams(account.login);
-      const defaultSet = new Set(
-        teamList
-          .filter(team => defaultTeams.includes(team.slug))
-          .map(team => team.id)
-      );
-      setSelectedTeamIds(defaultSet);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load teams'));
     } finally {
@@ -116,12 +122,16 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
         Array.from(selectedTeamIds)
       );
 
-      const selectedSlugs = selectedTeams.map(team => team.slug);
-      await ConfigService.setDefaultTeams(account.login, selectedSlugs);
-
       onTeamsSelected(selectedTeams);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Could not add repository to teams'));
+      const error = err instanceof Error ? err : new Error('Could not add repository to teams');
+      setError(error);
+      
+      // Check if it's a permission error
+      if (error.message.includes('permission') || error.message.includes('403') || error.message.includes('access')) {
+        setPermissionError(error);
+      }
+      
       setSubmitting(false);
     }
   };
@@ -177,6 +187,13 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
               {line}
             </Text>
           ))}
+          {permissionError && (
+            <Box marginTop={1} flexDirection="column">
+              <Text color="yellow">To fix permission issues:</Text>
+              <Text>1. Run: <Text color="cyan">gh auth refresh -s repo,admin:org,write:org</Text></Text>
+              <Text>2. Then press <Text color="green">Shift+Tab</Text> to refresh the token and retry</Text>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -196,6 +213,8 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({ account, repository,
         <Text dimColor>Enter: Confirm selection</Text>
         <Text dimColor>Escape: Cancel</Text>
       </Box>
+      
+      <TokenRefreshHint />
     </Box>
   );
 };

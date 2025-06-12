@@ -3,9 +3,6 @@ export interface Config {
     type: 'personal' | 'organization';
     login: string;
   };
-  defaultTeams?: {
-    [org: string]: string[];
-  };
 }
 
 export interface Repository {
