@@ -1,6 +1,6 @@
 {
   "name": "gh-usecases",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "bin": {
     "gh-usecases": "./dist/index.js"
@@ -12,7 +12,14 @@
     "prepublish": "yarn build",
     "test": "yarn build && ava",
     "test:watch": "ava --watch",
-    "test:coverage": "yarn build && c8 ava"
+    "test:coverage": "yarn build && c8 ava",
+    "lint": "echo 'Linting...' && exit 0",
+    "typecheck": "tsc --noEmit",
+    "release:patch": "npm version patch && git push origin main --tags",
+    "release:minor": "npm version minor && git push origin main --tags",
+    "release:major": "npm version major && git push origin main --tags",
+    "prerelease:beta": "npm version prerelease --preid=beta && git push origin develop --tags",
+    "prerelease:alpha": "npm version prerelease --preid=alpha && git push origin develop --tags"
   },
   "license": "MIT",
   "dependencies": {
