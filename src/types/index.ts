@@ -14,6 +14,7 @@ export interface Repository {
   owner: {
     login: string;
   };
+  isFork?: boolean;
 }
 
 export interface Team {
