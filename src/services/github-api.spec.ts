@@ -96,7 +96,7 @@ test('searchRepositories returns repositories with correct format', async t => {
   });
   
   const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.deepEqual(requestCall.args[1], { searchQuery: 'user:testuser test in:name', first: 10 });
+  t.deepEqual(requestCall.args[1], { searchQuery: 'owner:testuser test in:name sort:updated', first: 10 });
 });
 
 test('createRepository creates repository with correct input', async t => {

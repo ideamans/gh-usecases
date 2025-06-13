@@ -51,7 +51,11 @@ export class GitHubAPI {
   ): Promise<Repository[]> {
     const graphqlClient = await this.getGraphQLClient();
     
-    const searchQuery = `user:${owner} ${query} in:name`;
+    // Build search query based on owner context
+    // For personal accounts: search user's repos
+    // For organizations: search org's repos
+    // Always search in name field and sort by updated time
+    const searchQuery = owner ? `owner:${owner} ${query} in:name sort:updated` : `${query} in:name sort:updated`;
     
     const { search } = await graphqlClient.request<{
       search: {
