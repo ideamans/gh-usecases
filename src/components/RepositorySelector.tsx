@@ -124,6 +124,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
             >
               {index === selectedIndex ? '▶ ' : '  '}
               {repo.name}
+              {repo.isFork && <Text color="yellow"> [fork]</Text>}
               {repo.description && (
                 <Text dimColor> - {repo.description.substring(0, 50)}
                   {repo.description.length > 50 ? '...' : ''}

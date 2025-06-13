@@ -64,6 +64,7 @@ test('searchRepositories returns repositories with correct format', async t => {
           name: 'Repository 1',
           description: 'Description 1',
           isPrivate: false,
+          isFork: false,
           owner: { login: 'testuser' },
         },
         {
@@ -71,6 +72,7 @@ test('searchRepositories returns repositories with correct format', async t => {
           name: 'Repository 2',
           description: 'Description 2',
           isPrivate: true,
+          isFork: true,
           owner: { login: 'testuser' },
         },
       ],
@@ -86,6 +88,7 @@ test('searchRepositories returns repositories with correct format', async t => {
     description: 'Description 1',
     visibility: 'PUBLIC',
     owner: { login: 'testuser' },
+    isFork: false,
   });
   t.deepEqual(results[1], {
     id: 'repo2',
@@ -93,10 +96,11 @@ test('searchRepositories returns repositories with correct format', async t => {
     description: 'Description 2',
     visibility: 'PRIVATE', 
     owner: { login: 'testuser' },
+    isFork: true,
   });
   
   const requestCall = (graphqlClient.request as sinon.SinonStub).firstCall;
-  t.deepEqual(requestCall.args[1], { searchQuery: 'owner:testuser test in:name sort:updated', first: 10 });
+  t.deepEqual(requestCall.args[1], { searchQuery: 'owner:testuser test in:name fork:true sort:updated', first: 10 });
 });
 
 test('createRepository creates repository with correct input', async t => {

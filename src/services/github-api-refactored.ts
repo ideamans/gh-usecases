@@ -54,8 +54,9 @@ export class GitHubAPI {
     // Build search query based on owner context
     // For personal accounts: search user's repos
     // For organizations: search org's repos
+    // Include forks with fork:true
     // Always search in name field and sort by updated time
-    const searchQuery = owner ? `owner:${owner} ${query} in:name sort:updated` : `${query} in:name sort:updated`;
+    const searchQuery = owner ? `owner:${owner} ${query} in:name fork:true sort:updated` : `${query} in:name fork:true sort:updated`;
     
     const { search } = await graphqlClient.request<{
       search: {
@@ -64,6 +65,7 @@ export class GitHubAPI {
           name: string;
           description: string | null;
           isPrivate: boolean;
+          isFork: boolean;
           owner: {
             login: string;
           };
@@ -78,6 +80,7 @@ export class GitHubAPI {
               name
               description
               isPrivate
+              isFork
               owner {
                 login
               }
@@ -96,6 +99,7 @@ export class GitHubAPI {
       description: node.description || '',
       visibility: node.isPrivate ? 'PRIVATE' as const : 'PUBLIC' as const,
       owner: node.owner,
+      isFork: node.isFork,
     }));
   }
 
