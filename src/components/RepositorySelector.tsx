@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
-import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
 import { GitHubAPI } from '../services/github-api.js';
 import { Config, Repository } from '../types/index.js';
 import { formatErrorDisplay } from '../utils/error-messages.js';
 import { InteractionHistory } from '../services/interaction-history.js';
-import { useTokenRefresh } from '../hooks/useTokenRefresh.js';
 import { TokenRefreshHint } from './TokenRefreshHint.js';
 
 interface RepositorySelectorProps {
@@ -21,8 +19,9 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
   const [searching, setSearching] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [error, setError] = useState<Error | null>(null);
-  const [showResults, setShowResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  const showSuggestions = searchQuery.trim().length > 0 && repositories.length > 0 && !searching;
 
   useEffect(() => {
     if (searchTimer) {
@@ -36,7 +35,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
       setSearchTimer(timer);
     } else {
       setRepositories([]);
-      setShowResults(false);
+      setSelectedIndex(0);
     }
 
     return () => {
@@ -62,7 +61,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
         index === self.findIndex(r => r.id === repo.id)
       );
       setRepositories(uniqueResults);
-      setShowResults(true);
+      setSelectedIndex(0);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to search repositories'));
       setRepositories([]);
@@ -72,27 +71,28 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
   };
 
   const handleSearchSubmit = () => {
-    if (repositories.length === 1) {
-      InteractionHistory.record('selection', 'Repository', repositories[0].name);
-      onRepositorySelected(repositories[0]);
-    } else if (repositories.length > 1) {
-      setShowResults(true);
+    if (showSuggestions && repositories[selectedIndex]) {
+      const selected = repositories[selectedIndex];
+      InteractionHistory.record('selection', 'Repository', selected.name);
+      onRepositorySelected(selected);
     }
   };
 
-  const handleRepositorySelect = (item: { value: Repository }) => {
-    InteractionHistory.record('selection', 'Repository', item.value.name);
-    onRepositorySelected(item.value);
-  };
-  
-  // Handle selection by index to avoid object comparison issues
-  const handleIndexSelect = (item: { value: number }) => {
-    const repository = repositories[item.value];
-    if (repository) {
-      InteractionHistory.record('selection', 'Repository', repository.name);
-      onRepositorySelected(repository);
+  // Handle keyboard navigation
+  useInput((input, key) => {
+    if (key.upArrow && showSuggestions) {
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : repositories.length - 1));
+    } else if (key.downArrow && showSuggestions) {
+      setSelectedIndex((prev) => (prev < repositories.length - 1 ? prev + 1 : 0));
+    } else if (key.escape) {
+      setRepositories([]);
+      setSelectedIndex(0);
+    } else if (key.tab && showSuggestions && repositories[selectedIndex]) {
+      // Tab to complete the selected repository name
+      setSearchQuery(repositories[selectedIndex].name);
+      setRepositories([]);
     }
-  };
+  });
 
   if (error) {
     const errorLines = formatErrorDisplay(error);
@@ -110,24 +110,34 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
     );
   }
 
-  if (showResults && repositories.length > 0 && searchQuery.trim()) {
-    const repositoryItems = repositories.map((repository, index) => ({
-      label: `${repository.name}${repository.description ? ` - ${repository.description}` : ''}`,
-      value: index, // Use index instead of object
-    }));
+  // Repository suggestions list component
+  const renderSuggestions = () => {
+    if (!showSuggestions) return null;
 
     return (
-      <Box flexDirection="column">
-        <Box marginBottom={1}>
-          <Text bold>Select a repository:</Text>
-        </Box>
-        <SelectInput items={repositoryItems} onSelect={handleIndexSelect} />
+      <Box flexDirection="column" marginTop={1}>
+        {repositories.map((repo, index) => (
+          <Box key={repo.id}>
+            <Text
+              color={index === selectedIndex ? 'blue' : undefined}
+              backgroundColor={index === selectedIndex ? 'white' : undefined}
+            >
+              {index === selectedIndex ? '▶ ' : '  '}
+              {repo.name}
+              {repo.description && (
+                <Text dimColor> - {repo.description.substring(0, 50)}
+                  {repo.description.length > 50 ? '...' : ''}
+                </Text>
+              )}
+            </Text>
+          </Box>
+        ))}
         <Box marginTop={1}>
-          <Text dimColor>Press Esc to return to search</Text>
+          <Text dimColor>↑↓ Navigate • Enter: Select • Tab: Complete • Esc: Clear</Text>
         </Box>
       </Box>
     );
-  }
+  };
 
   return (
     <Box flexDirection="column">
@@ -154,9 +164,12 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
           <Text dimColor>No repositories found</Text>
         </Box>
       )}
-      <Box marginTop={1}>
-        <Text dimColor>Press Ctrl+C to cancel</Text>
-      </Box>
+      {renderSuggestions()}
+      {!showSuggestions && (
+        <Box marginTop={1}>
+          <Text dimColor>Type to search • Ctrl+C to cancel</Text>
+        </Box>
+      )}
       <TokenRefreshHint />
     </Box>
   );
