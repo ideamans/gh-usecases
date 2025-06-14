@@ -85,8 +85,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
     } else if (key.downArrow && showSuggestions) {
       setSelectedIndex((prev) => (prev < repositories.length - 1 ? prev + 1 : 0));
     } else if (key.escape) {
-      setRepositories([]);
-      setSelectedIndex(0);
+      onCancel();
     } else if (key.tab && showSuggestions && repositories[selectedIndex]) {
       // Tab to complete the selected repository name
       setSearchQuery(repositories[selectedIndex].name);
@@ -134,7 +133,7 @@ export const RepositorySelector: React.FC<RepositorySelectorProps> = ({ account,
           </Box>
         ))}
         <Box marginTop={1}>
-          <Text dimColor>↑↓ Navigate • Enter: Select • Tab: Complete • Esc: Clear</Text>
+          <Text dimColor>↑↓ Navigate • Enter: Select • Tab: Complete • Esc: Cancel</Text>
         </Box>
       </Box>
     );
