@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "^5.0.0",
-    "@swc/core": "^1.12.0",
+    "@swc/core": "^1.12.9",
     "@swc/register": "^0.1.10",
     "@types/fs-extra": "^11.0.4",
     "@types/ink-spinner": "^3.0.4",
