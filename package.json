@@ -44,7 +44,7 @@
     "@swc/register": "^0.1.10",
     "@types/fs-extra": "^11.0.4",
     "@types/ink-spinner": "^3.0.4",
-    "@types/node": "^24.0.7",
+    "@types/node": "^24.0.13",
     "@types/react": "^18.2.0",
     "@types/sinon": "^17.0.4",
     "ava": "^6.4.0",
