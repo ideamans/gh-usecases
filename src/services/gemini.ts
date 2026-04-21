@@ -4,6 +4,8 @@ import fs from 'fs-extra';
 import path from 'path';
 import { Team } from '../types/index.js';
 
+export const GEMINI_MODEL = 'gemini-3-flash-preview';
+
 export interface RepositorySuggestion {
   name: string;
   description?: string;
@@ -128,7 +130,7 @@ export class GeminiService {
         context += `\nAdditional context:\n${additionalContext}`;
       }
       
-      const model = 'gemini-3-flash-preview';
+      const model = GEMINI_MODEL;
       const contents = [
         {
           role: 'user',
@@ -196,7 +198,7 @@ ${context}`,
         repositories: team.repositories.map(r => r.name).slice(0, 10), // Limit to 10 repos per team
       }));
 
-      const model = 'gemini-3-flash-preview';
+      const model = GEMINI_MODEL;
       const contents = [
         {
           role: 'user',
