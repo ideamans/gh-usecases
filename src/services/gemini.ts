@@ -128,7 +128,7 @@ export class GeminiService {
         context += `\nAdditional context:\n${additionalContext}`;
       }
       
-      const model = 'gemini-2.0-flash';
+      const model = 'gemini-3-flash-preview';
       const contents = [
         {
           role: 'user',
@@ -196,7 +196,7 @@ ${context}`,
         repositories: team.repositories.map(r => r.name).slice(0, 10), // Limit to 10 repos per team
       }));
 
-      const model = 'gemini-2.0-flash';
+      const model = 'gemini-3-flash-preview';
       const contents = [
         {
           role: 'user',
