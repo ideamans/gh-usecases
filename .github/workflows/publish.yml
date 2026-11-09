@@ -37,9 +37,10 @@ jobs:
 
       # registry-url は付けない。OIDC では要らず、付けると .npmrc に ${NODE_AUTH_TOKEN} を参照する
       # 設定が書かれて、yarn v1 などがその置換で落ちる
+      # Node 22: 開発用の @ava/typescript 5 の engines が 26 を拒み、yarn install が落ちる
       - uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version: 22
 
       # Trusted Publishing には npm 11.5.1 以上が要る（yarn のリポジトリでも公開は npm で行う）
       - name: Update npm
