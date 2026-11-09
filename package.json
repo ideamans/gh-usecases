@@ -1,6 +1,10 @@
 {
   "name": "gh-usecases",
   "version": "1.1.4",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ideamans/gh-usecases.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
