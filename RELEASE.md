@@ -2,23 +2,9 @@
 
 ## セットアップ
 
-### 1. NPM Token の設定
-```bash
-# NPM にログイン
-npm login
-
-# Token を生成（Automation タイプを選択）
-# https://www.npmjs.com/settings/{username}/tokens
-```
-
-### 2. GitHub Secrets の設定
-- `NPM_TOKEN`: NPM の Automation Token
-- Repository Settings > Secrets and variables > Actions で設定
-
-### 3. GitHub CLI の設定
-```bash
-gh auth login
-```
+npm への公開は Trusted Publishing（GitHub Actions の OIDC）で行う。`NPM_TOKEN` などのシークレットは使わない。
+npmjs.com の gh-usecases の設定で、Trusted Publisher に GitHub Actions・`ideamans/gh-usecases`・
+`publish.yml`・権限 **publish** を登録しておく（stage publish の権限だけだと `E403 OIDC permission denied`）。
 
 ## 開発フロー
 
@@ -68,17 +54,13 @@ yarn release:major
 
 ## プレリリース
 
-### Beta リリース
 ```bash
-# develop ブランチで実行
-yarn prerelease:beta
+yarn prerelease:beta    # 1.2.0-beta.0 のタグを push → npm の dist-tag beta で公開
+yarn prerelease:alpha   # dist-tag alpha
 ```
 
-### Alpha リリース
-```bash
-# develop ブランチで実行
-yarn prerelease:alpha
-```
+`-` を含む版は `latest` にせず、識別子（beta / alpha）の dist-tag で出る。
+以前の prerelease.yml（develop への push ごとに beta を出す）は、2025-06 から使っておらず `NPM_TOKEN` 頼みだったので消した。
 
 ## 手動リリース
 
@@ -95,11 +77,14 @@ npm version patch  # または minor, major
 git push origin main --tags
 ```
 
-### 3. GitHub Actions でリリース処理が自動実行される
-- テスト実行
-- ビルド
-- NPM への公開
+### 3. GitHub Actions でリリース処理が自動実行される（`.github/workflows/publish.yml`）
+- タグと package.json の version の一致を確認（違えば落ちる。npm に同じ版があれば何もしない）
+- テスト実行・ビルド
+- npm への公開（Trusted Publishing。provenance 付き）
 - GitHub Release の作成
+
+以前の release.yml は「タグに合わせて package.json を書き換えてから公開」していたが、今はタグと version が
+違えば落とす。`npm version` で上げてからタグを打つこと（`yarn release:*` はそうしている）。
 
 ## バージョン確認
 
@@ -130,12 +115,13 @@ npm install -g gh-usecases@1.0.0
 ## トラブルシューティング
 
 ### NPM 公開エラー
-- Token の権限確認
+- `E403 OIDC permission denied`: Trusted Publisher の権限が stage publish だけになっていないか
+- `E404` on `PUT` / `ENEEDAUTH`: Trusted Publisher が登録されていないか、ワークフローのファイル名が違う
 - パッケージ名の重複確認
 - バージョン番号の重複確認
 
 ### GitHub Actions エラー
-- Secrets の設定確認
+- タグと package.json の version の一致を確認
 - ブランチ保護ルールの確認
 - テスト失敗の場合は修正してから再実行
 

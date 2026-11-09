@@ -93,3 +93,24 @@ gh-usecases/
 - Never log authentication tokens
 - Validate all user inputs
 - All UI messages and labels should be in English
+
+## Publishing to npm
+
+Pushing a `v*` tag runs `.github/workflows/publish.yml`, which tests, builds and **publishes to npm directly**
+(no staged approval). It authenticates with npm Trusted Publishing (GitHub Actions OIDC); no `NPM_TOKEN` secret is used,
+and provenance is attached automatically.
+
+```bash
+# after bumping "version" in package.json and pushing the commit
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+`yarn release:patch|minor|major` bumps the version and pushes the tag. The job also creates the GitHub Release. See RELEASE.md.
+
+- The job fails if the tag and the version in package.json differ, and does nothing if that version is already on npm.
+- A prerelease (`1.2.0-beta.0`) is published under its identifier as the dist-tag (`beta`), not `latest`.
+- Do not `npm publish` from a local machine (no tokens are kept).
+- To re-run without moving the tag, start "Publish to npm" with workflow_dispatch (it publishes the version in package.json on the chosen branch).
+- A PR that changes `publish.yml` runs the build and `npm pack --dry-run` without publishing.
+- Prerequisite: on npmjs.com, `gh-usecases` lists GitHub Actions / `ideamans/gh-usecases` / `publish.yml` with the **publish** permission as its
+  Trusted Publisher. With only the stage-publish permission, `npm publish` fails with `E403 OIDC permission denied`.
